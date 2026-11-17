@@ -552,9 +552,18 @@ function lunarNum(d){
     return { m: parseInt(p.find(x=>x.type==='month').value,10), d: parseInt(p.find(x=>x.type==='day').value,10) };
   } catch(e){ return null; }
 }
+// 農曆日期統一用中文數字並加「日」，例如「十月九日」「閏六月二十一日」
+function cnNum(n){
+  const D = '〇一二三四五六七八九';
+  if(n <= 10) return n === 10 ? '十' : D[n];
+  if(n < 20) return '十' + D[n-10];
+  return D[Math.floor(n/10)] + '十' + (n%10 ? D[n%10] : '');
+}
 function lunarText(d){
-  try { return new Intl.DateTimeFormat('zh-TW-u-ca-chinese',{month:'long',day:'numeric'}).format(d); }
-  catch(e){ return ''; }
+  const L = lunarNum(d); if(!L) return '';
+  let leap = false;
+  try { leap = new Intl.DateTimeFormat('zh-TW-u-ca-chinese',{month:'long'}).format(d).includes('閏'); } catch(e){}
+  return `${leap ? '閏' : ''}${cnNum(L.m)}月${cnNum(L.d)}日`;
 }
 function isBirthdayOn(b, d){
   if(!b.lunar) return d.getMonth()+1===b.mm && d.getDate()===b.dd;
