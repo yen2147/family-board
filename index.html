@@ -526,7 +526,7 @@
 <main class="board">
   <div class="col">
     <section class="card" id="dogCard">
-      <div class="card-h"><span class="badge b-acc"><svg class="i"><use href="#i-paw"/></svg></span><h2>狗狗下一餐</h2></div>
+      <div class="card-h"><span class="badge b-acc"><svg class="i"><use href="#i-paw"/></svg></span><h2>皮皮下一餐</h2></div>
       <div class="dog-top">
         <div class="ring" id="ring">
           <svg viewBox="0 0 120 120" aria-hidden="true">
@@ -626,7 +626,7 @@
     <div class="note-hint">想換男生的聲音：到 iPad「設定」→「輔助使用」→「朗讀內容」→「聲音」→「中文」，下載喜歡的聲音，再回到這裡選。</div>
     <label for="sMembers">家人（用逗號分隔）</label>
     <input id="sMembers">
-    <label for="sMeals">狗狗餵食時間（逗號分隔，24 小時制，想幾次就寫幾個）</label>
+    <label for="sMeals">皮皮餵食時間（逗號分隔，24 小時制，想幾次就寫幾個）</label>
     <input id="sMeals" placeholder="07:00,11:00,16:00,22:00">
     <label for="sCity">天氣地點（名稱,緯度,經度）</label>
     <input id="sCity" placeholder="中壢區,24.96,121.22">
@@ -863,7 +863,7 @@ function renderRing(){
   $('ringLabel').textContent = label;
   $('ringTime').textContent = time;
   $('ringStatus').textContent = status;
-  window._dogSpeak = st.kind === 'none' ? '' : st.kind === 'done' ? '狗狗今天都餵過了。' : `狗狗下一餐 ${st.next}，${status}。`;
+  window._dogSpeak = st.kind === 'none' ? '' : st.kind === 'done' ? '皮皮今天都餵過了。' : `皮皮下一餐 ${st.next}，${status}。`;
 }
 function renderDog(){
   renderRing();
@@ -998,7 +998,7 @@ function renderTimeline(){
   const logs = S.dogLog[key] || [];
   S.meals.slice().sort().forEach(m => {
     const rec = logs.find(x=>x.time===m);
-    timed.push({ t:m, kind:'feed', title: rec ? `✓ ${rec.by} 已餵` : '狗狗餵食', done: !!rec });
+    timed.push({ t:m, kind:'feed', title: rec ? `✓ ${rec.by} 已餵` : '皮皮吃飯', done: !!rec });
   });
   (S.walks[key]||[]).forEach(w => timed.push({ t:w.time, kind:'walk', title: w.type==='out' ? '出門散步' : '散步回來' }));
   S.birthdays.forEach(b => { if(isBirthdayOn(b,d)) allDay.push({ kind:'bday', title:`${b.name} 生日` }); });
@@ -1427,7 +1427,7 @@ function speak(text, pref = getVoicePref()){
 }
 function voiceFromForm(){ return { voiceURI: $('sVoice').value, rate: +$('sRate').value, pitch: +$('sPitch').value }; }
 ['sVoice','sRate','sPitch'].forEach(id => $(id).addEventListener('change', () => setVoicePref(voiceFromForm())));
-$('sVoiceTest').onclick = () => speak('大家好，狗狗下一餐是四點，今天要買牛奶和雞蛋。', voiceFromForm());
+$('sVoiceTest').onclick = () => speak('大家好，皮皮下一餐是四點，今天要買牛奶和雞蛋。', voiceFromForm());
 $('readBtn').onclick = () => speak((window._wxText || '') + (window._dogSpeak || '') + (window._summaryText || ''));
 
 // ---------- 日期切換 ----------
