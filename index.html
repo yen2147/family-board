@@ -273,15 +273,17 @@
   .item input[type=checkbox]:active { transform: scale(.88); }
   .item .done { text-decoration: line-through; text-decoration-thickness: 2px; color: var(--muted); }
   .del { width: 56px; padding: 0; background: transparent; color: var(--muted); box-shadow: none; font-size: 24px; }
-  .add { display: flex; gap: 10px; margin-top: 12px; }
+  .add { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
+  .add .mic { flex: 1 1 100%; margin-top: 0; }
+  .pair { display: contents; }
   .add input { flex: 1; min-width: 0; }
   .mic { width: 100%; margin-top: 12px; min-height: 64px; font-size: 22px; background: var(--sky); color: #fff; box-shadow: 0 6px 14px -6px rgba(47,116,181,.6); }
   .mic.on { background: var(--late); animation: breathe 1.4s ease-in-out infinite; }
   @keyframes breathe { 50% { box-shadow: 0 0 0 10px var(--late-soft); } }
   .hint { font-size: 16px; font-weight: 700; color: var(--muted); margin-top: 8px; text-align: center; }
-  #parseBox { margin-top: 14px; padding: 16px; border-radius: 20px; background: var(--sky-soft); display: flex; flex-direction: column; gap: 10px; }
-  #parseBox .heard { font-size: 18px; font-weight: 800; color: var(--text-mid); }
-  #parseBox label { font-size: 16px; font-weight: 900; color: var(--muted); letter-spacing: .08em; }
+  .parse-box { margin-top: 14px; padding: 16px; border-radius: 20px; background: var(--sky-soft); display: flex; flex-direction: column; gap: 10px; }
+  .parse-box .heard { font-size: 18px; font-weight: 800; color: var(--text-mid); }
+  .parse-box label { font-size: 16px; font-weight: 900; color: var(--muted); letter-spacing: .08em; }
 
   /* ---------- 倒數 ---------- */
   .cd { display: flex; align-items: center; gap: 16px; padding: 10px 0; border-bottom: 1px solid var(--line); }
@@ -313,6 +315,8 @@
   .meal-h { font-size: 16px; font-weight: 900; color: var(--muted); letter-spacing: .08em; margin-top: 16px; }
   .fedlog { margin-top: 8px; }
   .mchip { min-height: 56px; padding: 0 18px; border-radius: 999px; font-size: 20px; font-weight: 800; gap: 6px; background: var(--box-2); color: var(--text-mid); box-shadow: inset 0 0 0 1px var(--card-edge); }
+  .mchip { flex-direction: column; gap: 0; line-height: 1.1; }
+  .mchip small { font-size: 14px; font-weight: 800; opacity: .85; }
   .mchip.fed { background: var(--ok-soft); color: var(--ok); box-shadow: none; }
   .mchip.add { background: transparent; color: var(--accent); box-shadow: inset 0 0 0 2px var(--accent-soft); }
 
@@ -347,6 +351,11 @@
   button.danger { background: var(--late-soft); color: var(--late); box-shadow: none; margin-top: 10px; }
   .mfed { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 12px 14px; border-radius: 18px; background: var(--ok-soft); color: var(--ok); font-weight: 900; margin-top: 12px; }
   .mfed span { flex: 1; }
+  .voice-row { display: flex; gap: 10px; }
+  .voice-row select { flex: 1; min-width: 0; }
+  input[type=range] { padding: 0; background: transparent; border: 0; min-height: 44px; accent-color: var(--accent-fill); }
+  .dlg .note-hint { font-size: 16px; font-weight: 700; color: var(--muted); line-height: 1.5; margin-top: 4px; }
+  .mic.todo { background: var(--warn); box-shadow: 0 6px 14px -6px rgba(210,122,28,.6); }
   .dlg .item label { font-size: 23px; color: var(--text); margin-top: 0; letter-spacing: 0; }
   .dlg .datepick { font-size: 20px; color: var(--accent); margin-top: 0; }
 
@@ -368,6 +377,85 @@
   #toast.act { padding: 10px 10px 10px 24px; }
   #toast.act.show { pointer-events: auto; }
   #toast button { min-height: 56px; font-size: 20px; flex: none; }
+
+  /* iPad 橫放：整頁剛好一個畫面，不用往下滑；內容多時只在卡片內捲動 */
+  @media (min-width: 1000px) and (min-aspect-ratio: 5/4) {
+    html, body { height: 100%; }
+    body { height: 100vh; height: 100dvh; min-height: 0; overflow: hidden; display: flex; flex-direction: column; padding-block: 10px 12px; }
+    .head { flex: none; margin-bottom: 8px; gap: 10px 20px; }
+    #clock { font-size: 74px; }
+    #dateSolar { font-size: 24px; }
+    #dateLunar { font-size: 19px; }
+    .wx { min-height: 60px; padding: 6px 16px 6px 12px; }
+    .wx-ico, .wx-temp { font-size: 32px; }
+    .headline { flex: none; margin-bottom: 10px; padding: 6px 8px 6px 20px; }
+    #summary { font-size: 20px; line-height: 1.35; }
+    .board { flex: 1; min-height: 0; gap: 12px; grid-template-columns: minmax(0,.95fr) minmax(0,1.35fr) minmax(0,1fr); align-items: stretch; }
+    .col { min-height: 0; gap: 12px; }
+    .card { min-height: 0; display: flex; flex-direction: column; padding: 12px 16px 14px; border-radius: 22px; }
+    .card-h { flex: none; margin-bottom: 8px; }
+    .card-h .badge { width: 34px; height: 34px; font-size: 19px; border-radius: 11px; }
+    .card-h h2 { font-size: 15px; }
+    .scroll { flex: 1 1 auto; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
+    .listbar, .add, .daynav, .allday { flex: none; }
+    .foot { display: none; }
+
+    /* 左欄：狗狗 */
+    #dogCard { flex: 1; overflow-y: auto; }
+    .ring { width: 132px; height: 132px; }
+    .ring-c b { font-size: 34px; }
+    .ring-c small { display: none; }
+    .ring-c small, .ring-c span { font-size: 15px; }
+    .dog-top { gap: 10px; }
+    .dog-side { gap: 8px; }
+    .dog-side .q { display: none; }
+    .members { gap: 8px; }
+    .mbtn { min-height: 58px; font-size: 19px; }
+    .av { width: 38px; height: 38px; font-size: 18px; }
+    .meal-h { margin-top: 10px; font-size: 15px; }
+    .fedlog { display: grid; grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); gap: 6px; margin-top: 6px; }
+    .mchip { padding: 0 4px; font-size: 18px; }
+    .mchip.add { font-size: 15px; }
+    .walk { margin-top: 10px; gap: 8px; }
+    .walk button { min-width: 0; font-size: 18px; padding: 0 8px; white-space: nowrap; gap: 6px; }
+    #walkInfo { font-size: 16px; }
+
+    /* 中欄：行事曆在上，倒數與注意事項並排在下 */
+    #agendaCard { flex: 1.55 1 0; }
+    .daynav { margin-bottom: 8px; }
+    .ev { padding: 7px 4px; }
+    .ev-t { font-size: 22px; }
+    .ev-title { font-size: 21px; }
+    #countCard, #noticeCard { grid-area: auto; }
+    .pair { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 12px; flex: 1 1 0; min-height: 0; }
+    .cd { gap: 12px; padding: 7px 0; }
+    .cd-n { width: 62px; height: 56px; border-radius: 16px; }
+    .cd-n b { font-size: 26px; }
+    .cd.today .cd-n b { font-size: 20px; }
+    .cd-name { font-size: 19px; }
+    .cd-meta { font-size: 14px; }
+    .note { font-size: 19px; padding: 8px 0; }
+    .due { font-size: 14px; padding: 4px 9px; }
+    .note.vac { display: grid; grid-template-columns: auto minmax(0,1fr); column-gap: 12px; row-gap: 4px; }
+    .note.vac .due { grid-column: 2; justify-self: start; }
+
+    /* 右欄：代辦、購物 */
+    #todoCard, #shopCard { flex: 1 1 0; }
+    .listbar { flex-wrap: nowrap; margin-bottom: 4px; }
+    .listbar .datepick { min-width: 0; font-size: 18px; padding: 0 12px; }
+    .listbar > button { flex: none; padding: 0 14px; font-size: 18px; }
+    .item { padding: 2px 0; }
+    .item label { min-height: 52px; font-size: 21px; gap: 12px; }
+    .item input[type=checkbox] { width: 34px; height: 34px; border-radius: 10px; }
+    .item input[type=checkbox]:checked::after { width: 10px; height: 18px; }
+    .add { flex-wrap: nowrap; margin-top: 8px; }
+    .add .mic { flex: none; width: 56px; min-height: 56px; padding: 0; }
+    .add .mic span { display: none; }
+    .hint { display: none; flex: none; }
+    .card:has(.mic.on) .hint { display: block; }
+    .parse-box { flex: none; max-height: 70%; overflow-y: auto; }
+    .empty { padding: 8px 4px; font-size: 17px; }
+  }
 
   @media (max-width: 699px) {
     #clock { font-size: 72px; }
@@ -461,10 +549,7 @@
       </div>
     </section>
 
-    <section class="card" id="countCard">
-      <div class="card-h"><span class="badge b-rose"><svg class="i"><use href="#i-gift"/></svg></span><h2>倒數與生日</h2></div>
-      <div id="countdowns"></div>
-    </section>
+
   </div>
 
   <div class="col">
@@ -476,8 +561,18 @@
         <button class="plain icon" id="nextDay" aria-label="後一天"><svg class="i"><use href="#i-right"/></svg></button>
         <button class="soft" id="toToday">今天</button>
       </div>
-      <div id="timeline"></div>
+      <div id="timeline" class="scroll"></div>
     </section>
+    <div class="pair">
+    <section class="card" id="countCard">
+      <div class="card-h"><span class="badge b-rose"><svg class="i"><use href="#i-gift"/></svg></span><h2>倒數與生日</h2></div>
+      <div id="countdowns" class="scroll"></div>
+    </section>
+    <section class="card" id="noticeCard">
+      <div class="card-h"><span class="badge b-warn"><svg class="i"><use href="#i-pin"/></svg></span><h2>注意事項・疫苗</h2></div>
+      <div id="notices" class="scroll"></div>
+    </section>
+    </div>
   </div>
 
   <div class="col">
@@ -485,29 +580,29 @@
       <div class="card-h"><span class="badge b-warn"><svg class="i"><use href="#i-check"/></svg></span><h2>代辦事項</h2></div>
       <div class="listbar">
         <label class="datepick"><svg class="i"><use href="#i-cal"/></svg><span id="todoDate"></span><input type="date" class="pick" id="todoPick" aria-label="選擇代辦日期"></label>
-        <button class="soft" data-overview="todos">全部日期</button>
+        <button class="soft" data-overview="todos">全部</button>
       </div>
-      <div id="todos"></div>
-      <div class="add"><input id="todoInput" placeholder="要做什麼？" enterkeyhint="done"><button id="todoAdd">加入</button></div>
+      <div id="todos" class="scroll"></div>
+      <div class="add"><input id="todoInput" placeholder="要做什麼？" enterkeyhint="done"><button id="todoAdd">加入</button>
+        <button class="mic todo" id="micT" aria-label="用說的加入代辦"><svg class="i"><use href="#i-mic"/></svg><span id="micLabelT">用說的加入代辦</span></button></div>
+      <div class="hint" id="micHintT">例：「明天要繳電費，然後打電話給阿嬤」</div>
+      <div class="parse-box" id="parseBoxT" hidden></div>
     </section>
 
     <section class="card" id="shopCard">
       <div class="card-h"><span class="badge b-sky"><svg class="i"><use href="#i-cart"/></svg></span><h2>購物清單</h2></div>
       <div class="listbar">
         <label class="datepick"><svg class="i"><use href="#i-cal"/></svg><span id="shopDate"></span><input type="date" class="pick" id="shopPick" aria-label="選擇購物日期"></label>
-        <button class="soft" data-overview="shopping">全部日期</button>
+        <button class="soft" data-overview="shopping">全部</button>
       </div>
-      <div id="shopping"></div>
-      <div class="add"><input id="shopInput" placeholder="要買什麼？" enterkeyhint="done"><button id="shopAdd">加入</button></div>
-      <button class="mic" id="mic"><svg class="i"><use href="#i-mic"/></svg><span id="micLabel">用說的加入購物</span></button>
+      <div id="shopping" class="scroll"></div>
+      <div class="add"><input id="shopInput" placeholder="要買什麼？" enterkeyhint="done"><button id="shopAdd">加入</button>
+        <button class="mic" id="mic" aria-label="用說的加入購物"><svg class="i"><use href="#i-mic"/></svg><span id="micLabel">用說的加入購物</span></button></div>
       <div class="hint" id="micHint">例：「12月25號要買牛奶、衛生紙和雞蛋」</div>
-      <div id="parseBox" hidden></div>
+      <div class="parse-box" id="parseBox" hidden></div>
     </section>
 
-    <section class="card" id="noticeCard">
-      <div class="card-h"><span class="badge b-warn"><svg class="i"><use href="#i-pin"/></svg></span><h2>注意事項・疫苗驅蟲</h2></div>
-      <div id="notices"></div>
-    </section>
+
   </div>
 </main>
 
@@ -522,6 +617,13 @@
       <button type="button" data-theme-pick="light">淺色</button>
       <button type="button" data-theme-pick="dark">深色</button>
     </div>
+    <label for="sVoice">朗讀聲音</label>
+    <div class="voice-row"><select id="sVoice"></select><button type="button" class="soft" id="sVoiceTest">試聽</button></div>
+    <label for="sRate">朗讀速度（往右較快）</label>
+    <input type="range" id="sRate" min="0.6" max="1.3" step="0.1">
+    <label for="sPitch">聲音高低（往左較低沉）</label>
+    <input type="range" id="sPitch" min="0.5" max="1.5" step="0.1">
+    <div class="note-hint">想換男生的聲音：到 iPad「設定」→「輔助使用」→「朗讀內容」→「聲音」→「中文」，下載喜歡的聲音，再回到這裡選。</div>
     <label for="sMembers">家人（用逗號分隔）</label>
     <input id="sMembers">
     <label for="sMeals">狗狗餵食時間（逗號分隔，24 小時制，想幾次就寫幾個）</label>
@@ -777,10 +879,10 @@ function renderDog(){
     </button>`).join('');
   $('fedLog').innerHTML = meals.map(t => {
     const r = logs.find(x=>x.time===t);
-    return `<button class="mchip${r ? ' fed' : ''}" data-meal="${esc(t)}">${r ? '✓ ' : ''}<span class="num">${esc(t)}</span>${r ? ` ${esc(r.by)}` : ''}</button>`;
+    return `<button class="mchip${r ? ' fed' : ''}" data-meal="${esc(t)}"><span class="num">${r ? '✓' : ''}${esc(t)}</span>${r ? `<small>${esc(r.by)}</small>` : ''}</button>`;
   }).join('')
   + logs.map((x,i) => ({x,i})).filter(o => !meals.includes(o.x.time))
-      .map(o => `<button class="mchip fed" data-extra="${o.i}">✓ <span class="num">${esc(o.x.time)}</span> ${esc(o.x.by)}</button>`).join('')
+      .map(o => `<button class="mchip fed" data-extra="${o.i}"><span class="num">✓${esc(o.x.time)}</span><small>${esc(o.x.by)}・加餵</small></button>`).join('')
   + `<button class="mchip add" data-meal-add>＋ 加一餐</button>`;
   const walks = S.walks[key] || [];
   const outCount = walks.filter(w=>w.type==='out').length;
@@ -1044,10 +1146,10 @@ function cnNum(s){
   if(s.includes('十')){ const [a,b] = s.split('十'); return (a ? CN[a] : 1) * 10 + (b ? CN[b] : 0); }
   return CN[s] ?? NaN;
 }
-function parseShopping(text){
+// 從一句話裡找出日期（幾月幾號、幾號、今天明天後天、星期幾），回傳日期與剩下的文字
+function parseDateWords(text){
   const d = startOfDay();
   let t = text, found = false;
-  // 「12月25號」「十二月二十五日」
   const NUM = '([0-9]{1,2}|[一二三四五六七八九十]{1,3})';
   const md = t.match(new RegExp(NUM + '\\s*月\\s*' + NUM + '\\s*[號号日]?'));
   const dOnly = !md && t.match(new RegExp(NUM + '\\s*[號号]'));
@@ -1074,57 +1176,79 @@ function parseShopping(text){
     const m = t.match(/(?:星期|禮拜|週|周)([一二三四五六日天])/);
     if(m){ d.setDate(d.getDate() + (WEEK[m[1]] - d.getDay() + 7) % 7); t = t.replace(m[0],''); }
   }
-  t = t.replace(/要去買|要買|記得買|幫我買|記得|還要|買/g, '');
-  const items = t.split(/[、，,。；;\s]+|和|及|跟|與|然後|另外|還有/)
-    .map(s => s.replace(/^[的了呢吧啊嗎]+|[的了呢吧啊嗎。！!？?]+$/g,'').trim())
-    .filter(s => s.length > 0 && !/^[要買記得還]+$/.test(s));
-  return { date: ymd(d), items };
+  return { date: ymd(d), rest: t };
 }
-function showParse(text){
-  const p = parseShopping(text);
-  const box = $('parseBox');
+const tidy = s => s.replace(/^[的了呢吧啊嗎，,\s]+|[的了呢吧啊嗎。！!？?，,\s]+$/g,'').trim();
+function parseShopping(text){
+  const { date, rest } = parseDateWords(text);
+  const t = rest.replace(/要去買|要買|記得買|幫我買|記得|還要|買/g, '');
+  const items = t.split(/[、，,。；;\s]+|和|及|跟|與|然後|另外|還有/)
+    .map(tidy).filter(s => s.length > 0 && !/^[要買記得還]+$/.test(s));
+  return { date, items };
+}
+// 代辦：只用標點和「然後、還有、另外、再來」分開，避免把「跟阿嬤吃飯」拆壞
+function parseTodo(text){
+  const { date, rest } = parseDateWords(text);
+  const items = rest.split(/[、，,。；;]+|然後|還有|另外|再來|接著/)
+    .map(s => tidy(s).replace(/^(提醒我|我要|我得|記得要|記得|要|得)/, ''))
+    .map(tidy).filter(s => s.length > 0);
+  return { date, items };
+}
+function showParse(text, target = 'shopping'){
+  const p = target === 'todos' ? parseTodo(text) : parseShopping(text);
+  const box = $(MIC[target].box);
+  const noun = target === 'todos' ? '要做的事（一行一件，可以改）' : '要買的東西（一行一樣，可以改）';
   box.hidden = false;
   box.innerHTML = `
     <div class="heard">聽到：「${esc(text)}」</div>
-    <label for="pDate">加到哪一天</label><input type="date" id="pDate" value="${p.date}">
-    <label for="pItems">要買的東西（一行一樣，可以改）</label><textarea id="pItems" rows="4">${esc(p.items.join('\n'))}</textarea>
-    <div class="add"><button id="pOk" style="flex:1">確認加入</button><button class="plain" id="pNo">取消</button></div>`;
-  $('pOk').onclick = () => {
-    const date = $('pDate').value || selected;
-    const items = $('pItems').value.split('\n').map(s=>s.trim()).filter(Boolean);
-    const arr = S.shopping[date] || (S.shopping[date] = []);
+    <label>加到哪一天</label><input type="date" class="p-date" value="${p.date}" aria-label="加到哪一天">
+    <label>${noun}</label><textarea class="p-items" rows="4" aria-label="${noun}">${esc(p.items.join('\n'))}</textarea>
+    <div class="add"><button class="p-ok" style="flex:1">確認加入</button><button class="plain p-no">取消</button></div>`;
+  box.querySelector('.p-ok').onclick = () => {
+    const date = box.querySelector('.p-date').value || selected;
+    const items = box.querySelector('.p-items').value.split('\n').map(s=>s.trim()).filter(Boolean);
+    if(!items.length){ toast('沒有要加入的項目'); return; }
+    const arr = S[target][date] || (S[target][date] = []);
     const added = items.map(x => ({ text:x, done:false }));
     added.forEach(x => arr.push(x));
     save(); box.hidden = true;
     selected = date; refresh();
-    toast(`已加入 ${added.length} 樣東西到 ${shortDate(date)}`, () => {
-      const a = S.shopping[date] || [];
+    toast(`已加入 ${added.length} ${target === 'todos' ? '件事' : '樣東西'}到 ${shortDate(date)}`, () => {
+      const a = S[target][date] || [];
       added.forEach(x => { const j = a.indexOf(x); if(j >= 0) a.splice(j, 1); });
       save(); refresh();
     });
   };
-  $('pNo').onclick = () => { box.hidden = true; };
+  box.querySelector('.p-no').onclick = () => { box.hidden = true; };
 }
 
 // 語音：Safari 用內建 SpeechRecognition；在 Claude 網頁上則改用平台的聽寫功能
 const getSR = () => window.SpeechRecognition || window.webkitSpeechRecognition;
 let dict = null, dictBuf = '';
+// 兩個語音按鈕：購物、代辦；同一時間只會有一個在聽
+const MIC = {
+  shopping: { btn:'mic',  label:'micLabel',  hint:'micHint',  box:'parseBox',  idle:'用說的加入購物', example:'例：「12月25號要買牛奶、衛生紙和雞蛋」' },
+  todos:    { btn:'micT', label:'micLabelT', hint:'micHintT', box:'parseBoxT', idle:'用說的加入代辦', example:'例：「明天要繳電費，然後打電話給阿嬤」' },
+};
+let micTarget = 'shopping';
+const M = () => MIC[micTarget];
 function setMic(on, label){
-  $('mic').classList.toggle('on', on);
-  $('micLabel').textContent = label || (on ? '聆聽中…再按一次結束' : '用說的加入購物');
+  $(M().btn).classList.toggle('on', on);
+  $(M().label).textContent = label || (on ? '聆聽中…再按一次結束' : M().idle);
 }
+function setHint(t){ $(M().hint).textContent = t ?? M().example; }
 (async () => {
   try {
     if(!(window.claude && window.claude.use)) return;
     dict = await window.claude.use('dictation');
     if(!dict) return;
-    dict.onPartial(({text}) => { $('micHint').textContent = dictBuf + text; });
-    dict.onFinal(({text}) => { dictBuf += text; $('micHint').textContent = dictBuf; });
+    dict.onPartial(({text}) => setHint(dictBuf + text));
+    dict.onFinal(({text}) => { dictBuf += text; setHint(dictBuf); });
     dict.onState(({state, reason}) => {
       if(state === 'idle'){
         setMic(false);
-        $('micHint').textContent = HINT;
-        if(dictBuf.trim()) showParse(dictBuf.trim());
+        setHint();
+        if(dictBuf.trim()) showParse(dictBuf.trim(), micTarget);
         else if(reason && !['stopped','viewer_stopped','hidden','dismissed'].includes(reason)) toast('沒有聽清楚，請再說一次或直接打字');
         dictBuf = '';
       } else setMic(true);
@@ -1134,7 +1258,6 @@ function setMic(on, label){
 // Safari 語音辨識：每次都建立新的辨識器、先清掉上一個；
 // 等麥克風真的開好才顯示「請說話」；邊說邊顯示聽到的字；
 // 停頓 2 秒或再按一次就結束；任何情況都會回到可用狀態，不會卡住。
-const HINT = '例：「12月25號要買牛奶、衛生紙和雞蛋」';
 let rec = null, recText = '', recTimer = null, recWatch = null, recDone = false;
 function clearRecTimers(){ clearTimeout(recTimer); clearTimeout(recWatch); recTimer = recWatch = null; }
 function finishRec(reason){
@@ -1144,9 +1267,9 @@ function finishRec(reason){
   const r = rec; rec = null;
   if(r){ r.onresult = r.onerror = r.onend = r.onstart = r.onaudiostart = null; try { r.abort(); } catch(e){} }
   setMic(false);
-  $('micHint').textContent = HINT;
+  setHint();
   const text = recText.trim(); recText = '';
-  if(text) showParse(text);
+  if(text) showParse(text, micTarget);
   else if(reason === 'denied') toast('沒有麥克風權限：請到 iPad「設定」→ Safari → 麥克風，改成允許');
   else if(reason === 'nostart') toast('麥克風沒有打開，請再按一次');
   else if(reason !== 'cancel') toast('沒有聽到聲音，請按一下按鈕，看到「請說話」再開始說');
@@ -1161,12 +1284,12 @@ function startRec(){
   r.interimResults = true;
   r.maxAlternatives = 1;
   setMic(true, '準備中…');
-  $('micHint').textContent = '麥克風開啟中，請稍等';
+  setHint('麥克風開啟中，請稍等');
   const ready = () => {
     if(rec !== r) return;
     clearTimeout(recWatch);
     setMic(true, '請說話・說完再按一次');
-    $('micHint').textContent = '正在聽…';
+    setHint('正在聽…');
     recTimer = setTimeout(() => finishRec('silence'), 8000);   // 8 秒都沒說話就結束
   };
   r.onstart = ready;
@@ -1176,7 +1299,7 @@ function startRec(){
     let txt = '';
     for(let i = 0; i < e.results.length; i++) txt += e.results[i][0].transcript;
     recText = txt;
-    $('micHint').textContent = `聽到：${txt}`;
+    setHint(`聽到：${txt}`);
     clearTimeout(recTimer);
     recTimer = setTimeout(() => finishRec('silence'), 2000);    // 停頓 2 秒就算說完
   };
@@ -1193,13 +1316,20 @@ function startRec(){
   try { r.start(); } catch(e){ finishRec('nostart'); }
   return true;
 }
-$('mic').onclick = () => {
-  if(rec){ finishRec('stop'); return; }            // 聆聽中再按一次＝說完了
+function micClick(target){
+  if(rec){                                         // 聆聽中再按一次＝說完了
+    const same = target === micTarget;
+    finishRec('stop');
+    if(same) return;
+  }
   if(dict && dict.active()){ dict.stop().catch(()=>{}); return; }
+  micTarget = target;
   if(getSR() && startRec()) return;
   if(dict){ startDict(); return; }
   toast('這個瀏覽器不支援語音輸入，請改用 Safari，或直接打字');
-};
+}
+$('mic').onclick = () => micClick('shopping');
+$('micT').onclick = () => micClick('todos');
 document.addEventListener('visibilitychange', () => { if(document.hidden && rec) finishRec('cancel'); });
 function startDict(){
   if(dict.active()){ dict.stop().catch(()=>{}); return; }
@@ -1259,12 +1389,46 @@ function renderSummary(){
   $('summary').textContent = text;
   window._summaryText = text;
 }
-$('readBtn').onclick = () => {
+// ---------- 朗讀聲音（另存一個 key，不動家庭資料） ----------
+const VOICE_KEY = 'family-board-voice';
+function getVoicePref(){
+  try { return Object.assign({ voiceURI:'', rate:0.9, pitch:1 }, JSON.parse(localStorage.getItem(VOICE_KEY) || '{}')); }
+  catch(e){ return { voiceURI:'', rate:0.9, pitch:1 }; }
+}
+function setVoicePref(p){ try { localStorage.setItem(VOICE_KEY, JSON.stringify(p)); } catch(e){} }
+const LANG_NAME = { 'zh-TW':'台灣', 'zh-CN':'中國', 'zh-HK':'香港粵語', 'yue-HK':'香港粵語', 'cmn-TW':'台灣', 'cmn-CN':'中國' };
+function zhVoices(){
+  if(!('speechSynthesis' in window)) return [];
+  const order = l => /TW/i.test(l) ? 0 : /CN/i.test(l) ? 1 : 2;
+  return speechSynthesis.getVoices()
+    .filter(v => /^(zh|cmn|yue)/i.test(v.lang))
+    .sort((a,b) => order(a.lang) - order(b.lang) || a.name.localeCompare(b.name));
+}
+function fillVoices(){
+  const sel = $('sVoice'); if(!sel) return;
+  const pref = getVoicePref();
+  const list = zhVoices();
+  sel.innerHTML = `<option value="">系統預設</option>` + list.map(v =>
+    `<option value="${esc(v.voiceURI)}">${esc(v.name.replace(/\s*[（(].*$/, ''))}（${LANG_NAME[v.lang.replace('_','-')] || v.lang}）</option>`).join('');
+  sel.value = list.some(v => v.voiceURI === pref.voiceURI) ? pref.voiceURI : '';
+  $('sRate').value = pref.rate; $('sPitch').value = pref.pitch;
+}
+if('speechSynthesis' in window){
+  fillVoices();
+  speechSynthesis.addEventListener ? speechSynthesis.addEventListener('voiceschanged', fillVoices) : (speechSynthesis.onvoiceschanged = fillVoices);
+}
+function speak(text, pref = getVoicePref()){
   if(!('speechSynthesis' in window)){ toast('這個瀏覽器不支援朗讀'); return; }
-  const u = new SpeechSynthesisUtterance((window._wxText || '') + (window._dogSpeak || '') + (window._summaryText || ''));
-  u.lang = 'zh-TW'; u.rate = 0.9;
+  const u = new SpeechSynthesisUtterance(text);
+  const v = pref.voiceURI && speechSynthesis.getVoices().find(x => x.voiceURI === pref.voiceURI);
+  if(v){ u.voice = v; u.lang = v.lang; } else u.lang = 'zh-TW';
+  u.rate = +pref.rate || 0.9; u.pitch = +pref.pitch || 1;
   speechSynthesis.cancel(); speechSynthesis.speak(u);
-};
+}
+function voiceFromForm(){ return { voiceURI: $('sVoice').value, rate: +$('sRate').value, pitch: +$('sPitch').value }; }
+['sVoice','sRate','sPitch'].forEach(id => $(id).addEventListener('change', () => setVoicePref(voiceFromForm())));
+$('sVoiceTest').onclick = () => speak('大家好，狗狗下一餐是四點，今天要買牛奶和雞蛋。', voiceFromForm());
+$('readBtn').onclick = () => speak((window._wxText || '') + (window._dogSpeak || '') + (window._summaryText || ''));
 
 // ---------- 日期切換 ----------
 function renderDayLabel(){
@@ -1275,8 +1439,9 @@ function renderDayLabel(){
   const sub = $('selSub');
   sub.textContent = rel || (n > 0 ? `${n} 天後` : `${-n} 天前`);
   sub.classList.toggle('today', n === 0);
-  $('todoDate').textContent = shortDate(selected);
-  $('shopDate').textContent = shortDate(selected);
+  const listTxt = rel ? `${rel} ${d.getMonth()+1}/${d.getDate()}` : `${d.getMonth()+1}/${d.getDate()}（${WK[d.getDay()]}）`;
+  $('todoDate').textContent = listTxt;
+  $('shopDate').textContent = listTxt;
   ['dayPick','todoPick','shopPick'].forEach(id => $(id).value = selected);
   $('toToday').hidden = n === 0;
 }
@@ -1307,6 +1472,7 @@ function openSettings(){
   $('sVaccines').value = S.vaccines.map(c => `${c.name} ${c.date}`).join('\n');
   $('sNotices').value = S.notices.join('\n');
   applyTheme(getTheme());
+  fillVoices();
   $('settingsDlg').showModal();
 }
 $('settingsBtn').onclick = openSettings;
