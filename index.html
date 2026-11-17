@@ -1,0 +1,1024 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="家庭看板">
+<meta name="theme-color" content="#fdf8f2">
+<title>家庭看板</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<!--
+  視覺與版面參考 DinkyDash（https://github.com/caspii/dinkydash）的看板設計：
+  暖白底、橘色強調、卡片浮起陰影、議程即主畫面、寬螢幕多欄／直立單欄。
+  本檔未複製其程式碼，僅參考其配色數值與版面原則。
+  DinkyDash: Copyright (c) Caspar von Wrede, MIT License.
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900&display=swap">
+<style>
+  /* 版面：頂部時鐘＋天氣 → 一句話摘要（DinkyDash 的 headline）→
+     橫向三欄：狗狗＋倒數 ｜ 行事曆（主角）｜ 代辦、購物、注意事項；
+     直向：狗狗、行事曆滿版，其餘兩兩並排；手機：單欄。 */
+  :root {
+    --bg: #fdf8f2;
+    --page: radial-gradient(130% 70% at 50% -10%, #fffefb 0%, #fdf8f2 60%, #faf1e6 100%);
+    --card: linear-gradient(180deg, #ffffff 0%, #fffbf7 100%);
+    --card-edge: rgba(74, 48, 28, 0.08);
+    --lift: inset 0 1px 0 rgba(255,255,255,.85), 0 1px 2px rgba(74,48,28,.05), 0 4px 10px -2px rgba(74,48,28,.07), 0 14px 32px -10px rgba(74,48,28,.13);
+    --box: #fff3e8;
+    --box-2: #f6efe7;
+    --text: #2d2319;
+    --text-mid: #5c4a3a;
+    --muted: #7a685a;
+    --accent: #b44314;
+    --accent-fill: #e85d24;
+    --accent-soft: rgba(232, 93, 36, 0.12);
+    --on-accent: #ffffff;
+    --plum: #6b4fa8;
+    --plum-soft: rgba(124, 92, 191, 0.12);
+    --ok: #2e8a57;
+    --ok-soft: rgba(46, 138, 87, 0.13);
+    --warn: #d27a1c;
+    --warn-soft: rgba(226, 140, 40, 0.15);
+    --late: #c8372d;
+    --late-soft: rgba(200, 55, 45, 0.12);
+    --sky: #2f74b5;
+    --sky-soft: rgba(47, 116, 181, 0.12);
+    --rose: #c2417a;
+    --rose-soft: rgba(194, 65, 122, 0.12);
+    --ring-track: #f1e6da;
+    --line: #efe3d6;
+    --m1: #e85d24; --m2: #7c5cbf; --m3: #1f8f86; --m4: #d0457f; --m5: #3d7cc9; --m6: #b8860b;
+    --f-ui: 'Nunito', 'PingFang TC', 'Heiti TC', 'Noto Sans TC', 'Microsoft JhengHei', system-ui, sans-serif;
+    --radius: 26px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]):not([data-board="light"]) {
+      --bg: #17120f;
+      --page: radial-gradient(130% 70% at 50% -10%, #221a15 0%, #17120f 60%, #120e0b 100%);
+      --card: linear-gradient(180deg, #2a211b 0%, #231b16 100%);
+      --card-edge: rgba(255,255,255,.06);
+      --lift: inset 0 1px 0 rgba(255,255,255,.05), 0 1px 2px rgba(0,0,0,.3), 0 14px 32px -10px rgba(0,0,0,.5);
+      --box: #31251d; --box-2: #2b221c;
+      --text: #f6efe7; --text-mid: #cbb9a7; --muted: #a08d7b;
+      --accent: #ff8a5a; --accent-fill: #ff7a45; --accent-soft: rgba(255,122,69,.18); --on-accent: #22140c;
+      --plum: #bda3ee; --plum-soft: rgba(157,125,222,.2);
+      --ok: #5cc98a; --ok-soft: rgba(92,201,138,.17);
+      --warn: #f2b968; --warn-soft: rgba(242,185,104,.17);
+      --late: #ff6f61; --late-soft: rgba(255,111,97,.17);
+      --sky: #7db4ec; --sky-soft: rgba(125,180,236,.17);
+      --rose: #f08cb7; --rose-soft: rgba(240,140,183,.17);
+      --ring-track: #3a2e26; --line: #3a2e26;
+      color-scheme: dark;
+    }
+  }
+  :root[data-board="dark"], :root[data-theme="dark"]:not([data-board="light"]) {
+    --bg: #17120f;
+    --page: radial-gradient(130% 70% at 50% -10%, #221a15 0%, #17120f 60%, #120e0b 100%);
+    --card: linear-gradient(180deg, #2a211b 0%, #231b16 100%);
+    --card-edge: rgba(255,255,255,.06);
+    --lift: inset 0 1px 0 rgba(255,255,255,.05), 0 1px 2px rgba(0,0,0,.3), 0 14px 32px -10px rgba(0,0,0,.5);
+    --box: #31251d; --box-2: #2b221c;
+    --text: #f6efe7; --text-mid: #cbb9a7; --muted: #a08d7b;
+    --accent: #ff8a5a; --accent-fill: #ff7a45; --accent-soft: rgba(255,122,69,.18); --on-accent: #22140c;
+    --plum: #bda3ee; --plum-soft: rgba(157,125,222,.2);
+    --ok: #5cc98a; --ok-soft: rgba(92,201,138,.17);
+    --warn: #f2b968; --warn-soft: rgba(242,185,104,.17);
+    --late: #ff6f61; --late-soft: rgba(255,111,97,.17);
+    --sky: #7db4ec; --sky-soft: rgba(125,180,236,.17);
+    --rose: #f08cb7; --rose-soft: rgba(240,140,183,.17);
+    --ring-track: #3a2e26; --line: #3a2e26;
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    font-family: var(--f-ui);
+    font-size: 20px;
+    line-height: 1.4;
+    background: var(--bg);
+    background-image: var(--page);
+    background-attachment: fixed;
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+    -webkit-tap-highlight-color: transparent;
+    padding-block: 18px 28px;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    min-height: 100vh;
+  }
+  .num { font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+  svg.i { width: 1em; height: 1em; flex: none; stroke: currentColor; fill: none; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+
+  /* ---------- 按鈕：至少 56px，按下有回饋 ---------- */
+  button, .btn {
+    font: inherit; font-weight: 800; font-size: 21px;
+    min-height: 56px; padding: 0 22px;
+    border-radius: 18px; border: 0;
+    display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+    background: var(--accent-fill); color: var(--on-accent);
+    cursor: pointer; text-decoration: none;
+    box-shadow: 0 1px 0 rgba(255,255,255,.25) inset, 0 6px 14px -6px rgba(180,67,20,.55);
+    transition: transform .12s ease, box-shadow .12s ease, filter .12s ease, background-color .2s;
+    touch-action: manipulation; user-select: none; -webkit-user-select: none;
+  }
+  button:active, .btn:active { transform: scale(.95); filter: brightness(.94); box-shadow: 0 2px 6px -3px rgba(0,0,0,.3); }
+  button:focus-visible, .btn:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible { outline: 3px solid var(--accent-fill); outline-offset: 3px; }
+  button.soft { background: var(--box); color: var(--accent); box-shadow: inset 0 0 0 1px var(--card-edge); }
+  button.plain { background: var(--box-2); color: var(--text-mid); box-shadow: inset 0 0 0 1px var(--card-edge); }
+  button.icon { width: 56px; padding: 0; font-size: 26px; }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; animation: none !important; } }
+
+  input, textarea, select {
+    font: inherit; font-size: 21px; font-weight: 600; color: var(--text);
+    background: var(--box-2); border: 1.5px solid var(--line); border-radius: 16px;
+    padding: 12px 16px; width: 100%; min-height: 56px;
+  }
+  textarea { min-height: 100px; line-height: 1.5; resize: vertical; }
+  input::placeholder, textarea::placeholder { color: var(--muted); font-weight: 600; }
+
+  /* ---------- 頂部 ---------- */
+  .head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px 24px; margin-bottom: 14px; }
+  .when { display: flex; align-items: center; gap: 22px; min-width: 0; flex-wrap: wrap; }
+  #clock { font-size: 96px; font-weight: 900; line-height: .95; letter-spacing: -0.04em; }
+  .dates { display: flex; flex-direction: column; gap: 4px; }
+  #dateSolar { font-size: 28px; font-weight: 800; }
+  #dateLunar { font-size: 22px; font-weight: 700; color: var(--accent); display: inline-flex; align-items: center; gap: 8px; }
+  #dateLunar::before { content: "農曆"; font-size: 15px; letter-spacing: .1em; padding: 3px 9px; border-radius: 999px; background: var(--accent-soft); }
+  .head-right { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .wx { display: flex; align-items: center; gap: 14px; padding: 10px 20px 10px 14px; border-radius: 22px; background: var(--card); box-shadow: var(--lift); border: 1px solid var(--card-edge); min-height: 72px; }
+  .wx-ico { font-size: 40px; color: var(--warn); display: flex; }
+  .wx-temp { font-size: 40px; font-weight: 900; line-height: 1; }
+  .wx-txt { display: flex; flex-direction: column; font-size: 17px; font-weight: 700; color: var(--text-mid); line-height: 1.3; }
+  .wx-txt b { color: var(--text); font-size: 19px; }
+  .wx.rainy .wx-ico { color: var(--sky); }
+  .wx .umb { color: var(--sky); }
+
+  /* ---------- 摘要 headline ---------- */
+  .headline { display: flex; align-items: center; gap: 16px; padding: 16px 18px 16px 24px; margin-bottom: 18px; border-radius: var(--radius); background: var(--box); border: 1px solid var(--card-edge); }
+  #summary { flex: 1; min-width: 0; font-size: 25px; font-weight: 800; line-height: 1.4; text-wrap: balance; }
+  .headline .acts { display: flex; gap: 10px; flex-wrap: wrap; }
+  .headline a.btn { background: transparent; color: var(--accent); box-shadow: inset 0 0 0 1.5px var(--accent-soft); font-size: 18px; padding: 0 16px; }
+
+  /* ---------- 版面 ---------- */
+  .board { display: grid; gap: 18px; grid-template-columns: minmax(0, 1fr); }
+  .col { display: contents; }
+  @media (min-width: 700px) {
+    .board { grid-template-columns: minmax(0,1fr) minmax(0,1fr); grid-template-areas: "dog dog" "agenda agenda" "todo shop" "count notice"; }
+    #dogCard { grid-area: dog; } #agendaCard { grid-area: agenda; } #todoCard { grid-area: todo; }
+    #shopCard { grid-area: shop; } #countCard { grid-area: count; } #noticeCard { grid-area: notice; }
+  }
+  @media (min-width: 1000px) and (min-aspect-ratio: 5/4) {
+    .board { grid-template-columns: minmax(0,.95fr) minmax(0,1.3fr) minmax(0,1fr); grid-template-areas: none; align-items: start; }
+    .col { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
+    .board .card { grid-area: auto; }
+    #clock { font-size: 104px; }
+    .dog-top { flex-direction: column; align-items: stretch; }
+    .ring { margin: 0 auto; }
+    .dog-side .q { text-align: center; }
+  }
+
+  .card { background: var(--card); border: 1px solid var(--card-edge); border-radius: var(--radius); box-shadow: var(--lift); padding: 20px 22px 22px; min-width: 0; }
+  .card-h { display: flex; align-items: center; gap: 12px; margin: 0 0 14px; }
+  .card-h h2 { margin: 0; font-size: 17px; font-weight: 900; letter-spacing: .14em; color: var(--muted); flex: 1; }
+  .card-h .badge { width: 40px; height: 40px; border-radius: 13px; display: grid; place-items: center; font-size: 22px; flex: none; }
+  .b-acc { background: var(--accent-soft); color: var(--accent); }
+  .b-plum { background: var(--plum-soft); color: var(--plum); }
+  .b-ok { background: var(--ok-soft); color: var(--ok); }
+  .b-sky { background: var(--sky-soft); color: var(--sky); }
+  .b-rose { background: var(--rose-soft); color: var(--rose); }
+  .b-warn { background: var(--warn-soft); color: var(--warn); }
+  .empty { color: var(--muted); font-weight: 700; font-size: 19px; padding: 14px 4px; }
+
+  /* ---------- 狗狗 ---------- */
+  .dog-top { display: flex; align-items: center; gap: 22px; flex-wrap: wrap; }
+  .ring { position: relative; width: 210px; height: 210px; flex: none; }
+  .ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+  .ring .track { stroke: var(--ring-track); }
+  .ring .bar { stroke: var(--ok); transition: stroke-dashoffset .8s cubic-bezier(.3,.7,.2,1), stroke .3s; }
+  .ring.soon .bar { stroke: var(--warn); }
+  .ring.late .bar { stroke: var(--late); }
+  .ring.late { animation: pulse 2.2s ease-in-out infinite; }
+  @keyframes pulse { 50% { transform: scale(1.03); } }
+  .ring.pop { animation: pop .6s cubic-bezier(.3,1.6,.5,1); }
+  @keyframes pop { 30% { transform: scale(1.08); } }
+  .ring-c { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+  .ring-c small { font-size: 16px; font-weight: 800; color: var(--muted); letter-spacing: .1em; }
+  .ring-c b { font-size: 50px; font-weight: 900; line-height: 1.05; }
+  .ring-c span { font-size: 18px; font-weight: 800; color: var(--ok); }
+  .ring.soon .ring-c span { color: var(--warn); }
+  .ring.late .ring-c span { color: var(--late); }
+  .dog-side { flex: 1; min-width: 200px; display: flex; flex-direction: column; gap: 10px; }
+  .dog-side .q { font-size: 18px; font-weight: 800; color: var(--text-mid); }
+  .members { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 10px; }
+  .mbtn { justify-content: flex-start; padding: 0 12px 0 8px; background: var(--box-2); color: var(--text); box-shadow: inset 0 0 0 1px var(--card-edge); min-height: 62px; font-size: 20px; }
+  .av { width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; color: #fff; font-size: 20px; font-weight: 900; flex: none; background: var(--mc, var(--m1)); }
+  .mbtn .lbl { display: flex; flex-direction: column; align-items: flex-start; line-height: 1.15; min-width: 0; }
+  .mbtn .lbl small { font-size: 14px; color: var(--muted); font-weight: 800; }
+  .fedlog { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+  .chip { display: inline-flex; align-items: center; gap: 6px; padding: 6px 13px; border-radius: 999px; font-size: 17px; font-weight: 800; background: var(--ok-soft); color: var(--ok); }
+  .chip.dim { background: var(--box-2); color: var(--muted); }
+  .walk { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; align-items: center; }
+  .walk button { flex: 1; min-width: 150px; }
+  #walkInfo { width: 100%; font-size: 18px; font-weight: 800; color: var(--muted); }
+  #walkInfo.out { color: var(--ok); }
+  button.walking { background: var(--ok); color: #fff; box-shadow: 0 6px 14px -6px rgba(46,138,87,.6); }
+
+  /* ---------- 行事曆 ---------- */
+  .daynav { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+  .daylabel { flex: 1; min-width: 0; text-align: center; }
+  #selDay { font-size: 25px; font-weight: 900; white-space: nowrap; }
+  #selSub { font-size: 16px; font-weight: 800; color: var(--muted); }
+  #selSub.today { color: var(--accent); }
+  .allday { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+  .allday .chip { font-size: 19px; padding: 8px 15px; }
+  .ev { display: grid; grid-template-columns: 84px 14px minmax(0,1fr) auto; align-items: center; gap: 12px; padding: 11px 4px; border-bottom: 1px solid var(--line); }
+  .ev:last-child { border-bottom: 0; }
+  .ev-t { font-size: 25px; font-weight: 900; color: var(--accent); text-align: right; }
+  .ev-t.word { font-size: 16px; letter-spacing: .08em; color: var(--muted); }
+  .ev-dot { width: 14px; height: 14px; border-radius: 50%; background: var(--kc); box-shadow: 0 0 0 4px var(--ks); }
+  .ev-title { font-size: 23px; font-weight: 800; overflow-wrap: anywhere; }
+  .ev-tag { font-size: 15px; font-weight: 800; padding: 4px 11px; border-radius: 999px; color: var(--kc); background: var(--ks); }
+  .ev.past .ev-t, .ev.past .ev-title { color: var(--muted); }
+  .ev.k-feed.done .ev-title { text-decoration: none; color: var(--ok); }
+  .ev.done .ev-title { text-decoration: line-through; text-decoration-thickness: 2px; color: var(--muted); }
+  .k-feed { --kc: var(--accent-fill); --ks: var(--accent-soft); }
+  .k-walk { --kc: var(--ok); --ks: var(--ok-soft); }
+  .k-bday { --kc: var(--rose); --ks: var(--rose-soft); }
+  .k-event { --kc: var(--plum); --ks: var(--plum-soft); }
+  .k-vac { --kc: var(--late); --ks: var(--late-soft); }
+  .k-shop { --kc: var(--sky); --ks: var(--sky-soft); }
+  .k-todo { --kc: var(--warn); --ks: var(--warn-soft); }
+  .now { display: grid; grid-template-columns: 84px 1fr; gap: 12px; align-items: center; margin: 2px 4px; }
+  .now b { text-align: right; font-size: 15px; font-weight: 900; color: var(--late); letter-spacing: .08em; }
+  .now i { height: 3px; border-radius: 3px; background: var(--late); position: relative; }
+  .now i::before { content: ""; position: absolute; left: -2px; top: -5px; width: 13px; height: 13px; border-radius: 50%; background: var(--late); }
+  .sub-h { font-size: 15px; font-weight: 900; letter-spacing: .14em; color: var(--muted); margin: 16px 0 4px 4px; }
+
+  /* ---------- 清單 ---------- */
+  .item { display: flex; align-items: center; gap: 12px; padding: 6px 0; border-bottom: 1px solid var(--line); }
+  .item:last-child { border-bottom: 0; }
+  .item label { flex: 1; display: flex; align-items: center; gap: 14px; min-height: 60px; cursor: pointer; font-size: 23px; font-weight: 800; min-width: 0; }
+  .item label span { overflow-wrap: anywhere; }
+  .item input[type=checkbox] { appearance: none; -webkit-appearance: none; width: 40px; height: 40px; min-height: 0; padding: 0; flex: none; border-radius: 12px; border: 2.5px solid var(--muted); background: transparent; display: grid; place-items: center; transition: transform .15s, background-color .15s; cursor: pointer; }
+  .item input[type=checkbox]:checked { background: var(--ok); border-color: var(--ok); }
+  .item input[type=checkbox]:checked::after { content: ""; width: 12px; height: 21px; border: solid #fff; border-width: 0 4px 4px 0; transform: translateY(-2px) rotate(45deg); }
+  .item input[type=checkbox]:active { transform: scale(.88); }
+  .item .done { text-decoration: line-through; text-decoration-thickness: 2px; color: var(--muted); }
+  .del { width: 56px; padding: 0; background: transparent; color: var(--muted); box-shadow: none; font-size: 24px; }
+  .add { display: flex; gap: 10px; margin-top: 12px; }
+  .add input { flex: 1; min-width: 0; }
+  .mic { width: 100%; margin-top: 12px; min-height: 64px; font-size: 22px; background: var(--sky); color: #fff; box-shadow: 0 6px 14px -6px rgba(47,116,181,.6); }
+  .mic.on { background: var(--late); animation: breathe 1.4s ease-in-out infinite; }
+  @keyframes breathe { 50% { box-shadow: 0 0 0 10px var(--late-soft); } }
+  .hint { font-size: 16px; font-weight: 700; color: var(--muted); margin-top: 8px; text-align: center; }
+  #parseBox { margin-top: 14px; padding: 16px; border-radius: 20px; background: var(--sky-soft); display: flex; flex-direction: column; gap: 10px; }
+  #parseBox .heard { font-size: 18px; font-weight: 800; color: var(--text-mid); }
+  #parseBox label { font-size: 16px; font-weight: 900; color: var(--muted); letter-spacing: .08em; }
+
+  /* ---------- 倒數 ---------- */
+  .cd { display: flex; align-items: center; gap: 16px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+  .cd:last-child { border-bottom: 0; }
+  .cd-n { width: 86px; height: 76px; flex: none; border-radius: 20px; background: var(--box); display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1; }
+  .cd-n b { font-size: 36px; font-weight: 900; color: var(--text); }
+  .cd-n small { font-size: 14px; font-weight: 800; color: var(--muted); margin-top: 4px; }
+  .cd.today .cd-n { background: var(--accent-fill); }
+  .cd.today .cd-n b { color: var(--on-accent); font-size: 25px; }
+  .cd-body { min-width: 0; }
+  .cd-name { font-size: 22px; font-weight: 800; overflow-wrap: anywhere; }
+  .cd-meta { font-size: 16px; font-weight: 800; color: var(--muted); display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 2px; }
+  .tag { font-size: 14px; padding: 2px 9px; border-radius: 999px; color: var(--kc); background: var(--ks); }
+
+  /* ---------- 注意事項 ---------- */
+  .note { display: flex; gap: 12px; align-items: flex-start; padding: 11px 0; border-bottom: 1px solid var(--line); font-size: 21px; font-weight: 800; }
+  .note:last-child { border-bottom: 0; }
+  .note .pin { color: var(--warn); font-size: 22px; margin-top: 4px; display: flex; }
+  .note.vac { align-items: center; }
+  .note .grow { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+  .note .grow small { display: block; font-size: 16px; color: var(--muted); }
+  .due { font-size: 16px; font-weight: 900; padding: 6px 12px; border-radius: 999px; white-space: nowrap; background: var(--box-2); color: var(--text-mid); }
+  .due.soon { background: var(--warn-soft); color: var(--warn); }
+  .due.late { background: var(--late-soft); color: var(--late); }
+
+  .foot { display: flex; justify-content: center; margin-top: 22px; }
+
+  /* ---------- 對話框與提示 ---------- */
+  dialog { width: min(94vw, 760px); max-height: 90vh; border: 0; border-radius: 28px; padding: 0; background: var(--bg); color: var(--text); box-shadow: 0 30px 80px -20px rgba(0,0,0,.45); }
+  dialog::backdrop { background: rgba(30,20,12,.45); }
+  .dlg { padding: 24px 26px 26px; display: flex; flex-direction: column; gap: 6px; }
+  .dlg h2 { margin: 0 0 6px; font-size: 28px; font-weight: 900; }
+  .dlg label { font-size: 17px; font-weight: 900; color: var(--text-mid); margin-top: 12px; }
+  .dlg .row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
+  .dlg .row button { flex: 1; min-width: 140px; }
+  .dlg hr { border: 0; border-top: 1px solid var(--line); margin: 22px 0 6px; width: 100%; }
+  .seg { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .seg button { background: var(--box-2); color: var(--text-mid); box-shadow: inset 0 0 0 1px var(--card-edge); }
+  .seg button[aria-pressed="true"] { background: var(--accent-fill); color: var(--on-accent); }
+  #toast { position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom, 0px)); transform: translate(-50%, 30px); opacity: 0; pointer-events: none; background: var(--text); color: var(--bg); padding: 16px 26px; border-radius: 18px; font-size: 20px; font-weight: 800; transition: .25s; max-width: calc(100% - 32px); text-align: center; z-index: 50; }
+  #toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+  @media (max-width: 699px) {
+    #clock { font-size: 72px; }
+    #summary { font-size: 21px; }
+    .headline { flex-direction: column; align-items: stretch; }
+    .ring { width: 180px; height: 180px; margin: 0 auto; }
+    .ev { grid-template-columns: 64px 12px minmax(0,1fr); }
+    .ev-tag { display: none; }
+    .now { grid-template-columns: 64px 1fr; }
+    .daynav button.icon { width: 52px; }
+    #toToday { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-paw" viewBox="0 0 24 24"><circle cx="6" cy="10" r="2"/><circle cx="10" cy="5.5" r="2"/><circle cx="14" cy="5.5" r="2"/><circle cx="18" cy="10" r="2"/><path d="M12 11c-3 0-5.5 3.5-5.5 6 0 1.6 1.3 2.5 3 2.5 1 0 1.7-.5 2.5-.5s1.5.5 2.5.5c1.7 0 3-.9 3-2.5 0-2.5-2.5-6-5.5-6z"/></symbol>
+  <symbol id="i-cal" viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15.5" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="17" height="17" rx="4"/><path d="M8 12.5l2.8 2.8L16.5 9"/></symbol>
+  <symbol id="i-cart" viewBox="0 0 24 24"><path d="M3 4h2.5l2.2 11h10.6l2-8H7"/><circle cx="9.5" cy="19.5" r="1.4"/><circle cx="17" cy="19.5" r="1.4"/></symbol>
+  <symbol id="i-gift" viewBox="0 0 24 24"><rect x="3.5" y="9" width="17" height="11.5" rx="2"/><path d="M3.5 13h17M12 9v11.5M12 9c-1.5-3.5-5.5-4-5.5-1.5S10 9 12 9zm0 0c1.5-3.5 5.5-4 5.5-1.5S14 9 12 9z"/></symbol>
+  <symbol id="i-pin" viewBox="0 0 24 24"><path d="M9 3h6l-1 6 3.5 3.5h-11L10 9 9 3zM12 12.5V21"/></symbol>
+  <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6"/></symbol>
+  <symbol id="i-cloud" viewBox="0 0 24 24"><path d="M7 18.5h10a4 4 0 0 0 .6-7.95A5.5 5.5 0 0 0 7 11a3.75 3.75 0 0 0 0 7.5z"/></symbol>
+  <symbol id="i-rain" viewBox="0 0 24 24"><path d="M7 15h10a4 4 0 0 0 .6-7.95A5.5 5.5 0 0 0 7 7.5a3.75 3.75 0 0 0 0 7.5zM8 18l-1 2.5M12 18l-1 2.5M16 18l-1 2.5"/></symbol>
+  <symbol id="i-bolt" viewBox="0 0 24 24"><path d="M7 14h10a4 4 0 0 0 .6-7.95A5.5 5.5 0 0 0 7 6.5a3.75 3.75 0 0 0 0 7.5zM12.5 14l-2 3.5h3l-2 3.5"/></symbol>
+  <symbol id="i-umb" viewBox="0 0 24 24"><path d="M3 12a9 9 0 0 1 18 0zM12 12v6.5a2 2 0 0 1-4 0M12 3v.5"/></symbol>
+  <symbol id="i-left" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></symbol>
+  <symbol id="i-right" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></symbol>
+  <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2.8l1.6 2.3 2.8-.5.9 2.7 2.6 1.2-.6 2.8 1.9 2.1-1.9 2.1.6 2.8-2.6 1.2-.9 2.7-2.8-.5L12 21.2l-1.6-2.3-2.8.5-.9-2.7-2.6-1.2.6-2.8L2.8 12l1.9-2.1-.6-2.8 2.6-1.2.9-2.7 2.8.5z"/></symbol>
+  <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></symbol>
+  <symbol id="i-speak" viewBox="0 0 24 24"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4zM15.5 9a4 4 0 0 1 0 6M18.5 6.5a7.5 7.5 0 0 1 0 11"/></symbol>
+  <symbol id="i-mic" viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/></symbol>
+  <symbol id="i-walk" viewBox="0 0 24 24"><circle cx="13" cy="4.5" r="1.8"/><path d="M10 21l2.5-6.5L15 17v4M8 12l2.5-4.5 3.5 1 2 3.5M10.5 7.5L9 13"/></symbol>
+  <symbol id="i-home" viewBox="0 0 24 24"><path d="M4 11l8-7 8 7M6 9.5V20h12V9.5M10 20v-5h4v5"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+  <symbol id="i-news" viewBox="0 0 24 24"><rect x="3.5" y="4.5" width="14" height="15" rx="2"/><path d="M17.5 8.5h3v9a2 2 0 0 1-2 2M7 9h7M7 12.5h7M7 16h4"/></symbol>
+</svg>
+
+<header class="head">
+  <div class="when">
+    <div id="clock" class="num">--:--</div>
+    <div class="dates">
+      <div id="dateSolar"></div>
+      <div id="dateLunar"></div>
+    </div>
+  </div>
+  <div class="head-right">
+    <div class="wx" id="weather">
+      <span class="wx-ico"><svg class="i"><use href="#i-sun"/></svg></span>
+      <div class="wx-txt"><b>天氣讀取中…</b></div>
+    </div>
+    <button class="plain icon" id="themeBtn" aria-label="切換深淺色"><svg class="i"><use href="#i-moon"/></svg></button>
+    <button class="plain icon" id="settingsBtn" aria-label="設定"><svg class="i"><use href="#i-gear"/></svg></button>
+  </div>
+</header>
+
+<section class="headline" aria-label="今日摘要">
+  <div id="summary"></div>
+  <div class="acts">
+    <button id="readBtn"><svg class="i"><use href="#i-speak"/></svg>朗讀</button>
+    <a class="btn" href="https://www.cna.com.tw/" target="_blank" rel="noopener"><svg class="i"><use href="#i-news"/></svg>新聞</a>
+  </div>
+</section>
+
+<main class="board">
+  <div class="col">
+    <section class="card" id="dogCard">
+      <div class="card-h"><span class="badge b-acc"><svg class="i"><use href="#i-paw"/></svg></span><h2>狗狗下一餐</h2></div>
+      <div class="dog-top">
+        <div class="ring" id="ring">
+          <svg viewBox="0 0 120 120" aria-hidden="true">
+            <circle class="track" cx="60" cy="60" r="52" stroke-width="12" fill="none"/>
+            <circle class="bar" id="ringBar" cx="60" cy="60" r="52" stroke-width="12" fill="none" stroke-linecap="round" stroke-dasharray="326.73" stroke-dashoffset="326.73"/>
+          </svg>
+          <div class="ring-c"><small id="ringLabel">下一餐</small><b class="num" id="ringTime">--:--</b><span id="ringStatus"></span></div>
+        </div>
+        <div class="dog-side">
+          <div class="q">誰餵的？按一下記錄</div>
+          <div class="members" id="members"></div>
+        </div>
+      </div>
+      <div class="fedlog" id="fedLog"></div>
+      <div class="walk">
+        <button class="soft" id="walkOut"><svg class="i"><use href="#i-walk"/></svg>出門散步</button>
+        <button class="soft" id="walkIn"><svg class="i"><use href="#i-home"/></svg>散步回來</button>
+        <div id="walkInfo"></div>
+      </div>
+    </section>
+
+    <section class="card" id="countCard">
+      <div class="card-h"><span class="badge b-rose"><svg class="i"><use href="#i-gift"/></svg></span><h2>倒數與生日</h2></div>
+      <div id="countdowns"></div>
+    </section>
+  </div>
+
+  <div class="col">
+    <section class="card" id="agendaCard">
+      <div class="card-h"><span class="badge b-plum"><svg class="i"><use href="#i-cal"/></svg></span><h2>行事曆</h2></div>
+      <div class="daynav">
+        <button class="plain icon" id="prevDay" aria-label="前一天"><svg class="i"><use href="#i-left"/></svg></button>
+        <div class="daylabel"><div id="selDay"></div><div id="selSub"></div></div>
+        <button class="plain icon" id="nextDay" aria-label="後一天"><svg class="i"><use href="#i-right"/></svg></button>
+        <button class="soft" id="toToday">今天</button>
+      </div>
+      <div id="timeline"></div>
+    </section>
+  </div>
+
+  <div class="col">
+    <section class="card" id="todoCard">
+      <div class="card-h"><span class="badge b-warn"><svg class="i"><use href="#i-check"/></svg></span><h2 id="todoTitle">今日代辦</h2></div>
+      <div id="todos"></div>
+      <div class="add"><input id="todoInput" placeholder="要做什麼？" enterkeyhint="done"><button id="todoAdd">加入</button></div>
+    </section>
+
+    <section class="card" id="shopCard">
+      <div class="card-h"><span class="badge b-sky"><svg class="i"><use href="#i-cart"/></svg></span><h2 id="shopTitle">購物清單</h2></div>
+      <div id="shopping"></div>
+      <div class="add"><input id="shopInput" placeholder="要買什麼？" enterkeyhint="done"><button id="shopAdd">加入</button></div>
+      <button class="mic" id="mic"><svg class="i"><use href="#i-mic"/></svg><span id="micLabel">用說的加入購物</span></button>
+      <div class="hint" id="micHint">例：「明天要買牛奶、衛生紙和雞蛋」</div>
+      <div id="parseBox" hidden></div>
+    </section>
+
+    <section class="card" id="noticeCard">
+      <div class="card-h"><span class="badge b-warn"><svg class="i"><use href="#i-pin"/></svg></span><h2>注意事項・疫苗驅蟲</h2></div>
+      <div id="notices"></div>
+    </section>
+  </div>
+</main>
+
+<div class="foot"><button class="plain" id="settingsBtn2"><svg class="i"><use href="#i-gear"/></svg>設定與備份</button></div>
+
+<dialog id="settingsDlg">
+  <div class="dlg">
+    <h2>設定</h2>
+    <label>畫面配色</label>
+    <div class="seg" id="themeSeg">
+      <button type="button" data-theme-pick="auto">自動</button>
+      <button type="button" data-theme-pick="light">淺色</button>
+      <button type="button" data-theme-pick="dark">深色</button>
+    </div>
+    <label for="sMembers">家人（用逗號分隔）</label>
+    <input id="sMembers">
+    <label for="sMeals">狗狗餵食時間（逗號分隔，24 小時制，想幾次就寫幾個）</label>
+    <input id="sMeals" placeholder="07:00,11:00,16:00,22:00">
+    <label for="sCity">天氣地點（名稱,緯度,經度）</label>
+    <input id="sCity" placeholder="中壢區,24.96,121.22">
+    <label for="sBirthdays">生日（每行一人：名稱 MM-DD 陽曆 或 農曆）</label>
+    <textarea id="sBirthdays" placeholder="爸爸 03-15 陽曆&#10;媽媽 10-05 農曆"></textarea>
+    <label for="sCountdowns">倒數日（每行：名稱 YYYY-MM-DD）</label>
+    <textarea id="sCountdowns" placeholder="家族旅行 2026-12-24"></textarea>
+    <label for="sVaccines">疫苗與驅蟲（每行：名稱 YYYY-MM-DD）</label>
+    <textarea id="sVaccines" placeholder="狂犬病疫苗 2027-03-01"></textarea>
+    <label for="sNotices">注意事項（每行一則）</label>
+    <textarea id="sNotices"></textarea>
+    <div class="row"><button id="sSave">儲存</button><button class="plain" id="sCancel">取消</button></div>
+    <hr>
+    <label for="sBackup">備份文字（按「產生備份」後複製存好；還原時把備份文字貼進來）</label>
+    <textarea id="sBackup" rows="4"></textarea>
+    <div class="row"><button class="soft" id="sExport">產生備份</button><button class="soft" id="sImport">從備份還原</button></div>
+  </div>
+</dialog>
+
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script>
+const KEY = 'family-board-v1';
+const THEME_KEY = 'family-board-theme';   // 只存畫面配色，與家庭資料分開
+const DEFAULT = {
+  members: ['爸爸','媽媽','哥哥','妹妹'],
+  meals: ['07:00','11:00','16:00','22:00'],
+  city: { name:'中壢區', lat:24.96, lon:121.22 },
+  birthdays: [], countdowns: [], vaccines: [], notices: [],
+  dogLog: {}, walks: {}, todos: {}, shopping: {}
+};
+
+function load(){
+  try { return Object.assign(structuredClone(DEFAULT), JSON.parse(localStorage.getItem(KEY) || '{}')); }
+  catch(e){ return structuredClone(DEFAULT); }
+}
+let S = load();
+function save(){
+  try { localStorage.setItem(KEY, JSON.stringify(S)); }
+  catch(e){ toast('無法儲存，請確認 Safari 沒有開啟無痕模式'); }
+}
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const pad = n => String(n).padStart(2,'0');
+const WK = '日一二三四五六';
+function ymd(d){ return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`; }
+function fromYmd(s){ const [y,m,d]=s.split('-').map(Number); return new Date(y,m-1,d); }
+function startOfDay(d=new Date()){ const x=new Date(d); x.setHours(0,0,0,0); return x; }
+function daysBetween(a,b){ return Math.round((startOfDay(b)-startOfDay(a))/86400000); }
+const todayKey = () => ymd(new Date());
+const hm = d => `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+let selected = todayKey();
+
+let toastTimer;
+function toast(msg){
+  const t = $('toast'); t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 2600);
+}
+
+// ---------- 配色 ----------
+function getTheme(){ try { return localStorage.getItem(THEME_KEY) || 'auto'; } catch(e){ return 'auto'; } }
+function applyTheme(t){
+  const root = document.documentElement;
+  if(t === 'auto') root.removeAttribute('data-board'); else root.setAttribute('data-board', t);
+  document.querySelectorAll('[data-theme-pick]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.themePick === t)));
+  const meta = document.querySelector('meta[name=theme-color]');
+  if(meta) meta.content = getComputedStyle(document.body).backgroundColor || '#fdf8f2';
+}
+function setTheme(t){ try { localStorage.setItem(THEME_KEY, t); } catch(e){} applyTheme(t); }
+function isDarkNow(){ return getComputedStyle(document.documentElement).getPropertyValue('--bg').trim() === '#17120f'; }
+$('themeBtn').onclick = () => setTheme(isDarkNow() ? 'light' : 'dark');
+$('themeSeg').addEventListener('click', e => { const b = e.target.closest('[data-theme-pick]'); if(b) setTheme(b.dataset.themePick); });
+applyTheme(getTheme());
+
+// ---------- 農曆 ----------
+function lunarNum(d){
+  try {
+    const p = new Intl.DateTimeFormat('en-US-u-ca-chinese',{month:'numeric',day:'numeric'}).formatToParts(d);
+    return { m: parseInt(p.find(x=>x.type==='month').value,10), d: parseInt(p.find(x=>x.type==='day').value,10) };
+  } catch(e){ return null; }
+}
+function lunarText(d){
+  try { return new Intl.DateTimeFormat('zh-TW-u-ca-chinese',{month:'long',day:'numeric'}).format(d); }
+  catch(e){ return ''; }
+}
+function isBirthdayOn(b, d){
+  if(!b.lunar) return d.getMonth()+1===b.mm && d.getDate()===b.dd;
+  const L = lunarNum(d); return !!L && L.m===b.mm && L.d===b.dd;
+}
+function nextBirthday(b){
+  const t = startOfDay();
+  for(let i=0;i<400;i++){ const d=new Date(t); d.setDate(t.getDate()+i); if(isBirthdayOn(b,d)) return d; }
+  return null;
+}
+
+// ---------- 時鐘與天氣 ----------
+let lastDay = todayKey();
+function tickClock(){
+  const now = new Date();
+  $('clock').textContent = hm(now);
+  $('dateSolar').textContent = `${now.getMonth()+1} 月 ${now.getDate()} 日　星期${WK[now.getDay()]}`;
+  $('dateLunar').textContent = lunarText(now);
+  // 跨日時自動回到新的一天
+  if(todayKey() !== lastDay){ if(selected === lastDay) selected = todayKey(); lastDay = todayKey(); renderAll(); }
+  renderRing();
+}
+
+const WX = {0:'晴',1:'大致晴',2:'多雲',3:'陰',45:'有霧',48:'有霧',51:'毛毛雨',53:'毛毛雨',55:'毛毛雨',61:'小雨',63:'雨',65:'大雨',71:'小雪',73:'雪',75:'大雪',80:'陣雨',81:'陣雨',82:'大陣雨',95:'雷雨',96:'雷雨',99:'雷雨'};
+function wxIcon(code){
+  if(code >= 95) return 'i-bolt';
+  if(code >= 51) return 'i-rain';
+  if(code >= 2) return 'i-cloud';
+  return 'i-sun';
+}
+async function loadWeather(){
+  const el = $('weather');
+  try {
+    const {lat,lon,name} = S.city;
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weather_code&hourly=precipitation_probability&timezone=Asia%2FTaipei`;
+    const j = await (await fetch(url)).json();
+    const h = new Date().getHours();
+    const probs = (j.hourly.precipitation_probability || []).slice(h, h+12);
+    const rain = probs.length ? Math.max(...probs) : 0;
+    const code = j.current.weather_code;
+    const wet = rain >= 50;
+    el.classList.toggle('rainy', wet || code >= 51);
+    el.innerHTML = `
+      <span class="wx-ico"><svg class="i"><use href="#${wxIcon(code)}"/></svg></span>
+      <span class="wx-temp num">${Math.round(j.current.temperature_2m)}°</span>
+      <div class="wx-txt"><b>${esc(name)}・${WX[code] || '天氣'}</b>
+        <span>${wet ? `<span class="umb">降雨 ${rain}%・記得帶傘</span>` : `12 小時降雨 ${rain}%`}</span></div>`;
+    window._wxText = `${name}${WX[code] || ''}，${Math.round(j.current.temperature_2m)}度，降雨機率${rain}%${wet ? '，記得帶傘' : ''}。`;
+  } catch(e){
+    el.classList.remove('rainy');
+    el.innerHTML = `<span class="wx-ico"><svg class="i"><use href="#i-cloud"/></svg></span><div class="wx-txt"><b>天氣讀取失敗</b><span>請檢查網路</span></div>`;
+    window._wxText = '';
+  }
+  renderSummary();
+}
+
+// ---------- 狗狗 ----------
+function mealAt(hhmm, base=new Date()){ const [h,m]=hhmm.split(':').map(Number); const t=new Date(base); t.setHours(h,m,0,0); return t; }
+function dogState(){
+  const now = new Date(), key = todayKey();
+  const logs = S.dogLog[key] || [];
+  const fed = new Set(logs.map(x=>x.time));
+  const meals = S.meals.slice().sort();
+  if(!meals.length) return { kind:'none', logs };
+  const pending = meals.find(m => !fed.has(m));
+  if(!pending) return { kind:'done', next:meals[0], logs };
+  const t = mealAt(pending), idx = meals.indexOf(pending);
+  let prev;
+  if(idx > 0) prev = mealAt(meals[idx-1]);
+  else { prev = mealAt(meals[meals.length-1]); prev.setDate(prev.getDate()-1); }
+  const diff = Math.round((t-now)/60000);
+  const frac = Math.min(1, Math.max(0.02, (now-prev)/(t-prev)));
+  return { kind: diff < 0 ? 'late' : diff <= 30 ? 'soon' : 'ok', next:pending, diff, frac, logs };
+}
+const C = 2 * Math.PI * 52;
+function renderRing(){
+  const st = dogState();
+  const ring = $('ring');
+  ring.classList.remove('soon','late');
+  let fill = 1, label = '下一餐', time = '--:--', status = '';
+  if(st.kind === 'none'){ label = '尚未設定'; status = '請到設定加入時間'; fill = 0; }
+  else if(st.kind === 'done'){ label = '明天'; time = st.next; status = '今天都餵過了'; }
+  else {
+    time = st.next;
+    if(st.kind === 'late'){ ring.classList.add('late'); status = `已超過 ${-st.diff} 分`; fill = 1; }
+    else {
+      if(st.kind === 'soon') ring.classList.add('soon');
+      const h = Math.floor(st.diff/60), m = st.diff%60;
+      status = st.diff === 0 ? '就是現在' : h ? `還有 ${h} 小時 ${m} 分` : `還有 ${m} 分鐘`;
+      fill = st.frac;
+    }
+  }
+  $('ringBar').style.strokeDashoffset = String(C * (1 - fill));
+  $('ringLabel').textContent = label;
+  $('ringTime').textContent = time;
+  $('ringStatus').textContent = status;
+  window._dogSpeak = st.kind === 'none' ? '' : st.kind === 'done' ? '狗狗今天都餵過了。' : `狗狗下一餐 ${st.next}，${status}。`;
+}
+function renderDog(){
+  renderRing();
+  const key = todayKey();
+  const logs = S.dogLog[key] || [];
+  const meals = S.meals.slice().sort();
+  const fed = new Set(logs.map(x=>x.time));
+  const nextSlot = meals.find(m => !fed.has(m));
+  $('members').innerHTML = S.members.map((m,i) => `
+    <button class="mbtn" data-feed="${esc(m)}" style="--mc:var(--m${i%6+1})">
+      <span class="av">${esc([...m][0] || '?')}</span>
+      <span class="lbl">${esc(m)}<small>${nextSlot ? `餵了 ${nextSlot}` : '加餵一次'}</small></span>
+    </button>`).join('');
+  $('fedLog').innerHTML = meals.map(t => {
+    const r = logs.find(x=>x.time===t);
+    return r ? `<span class="chip">✓ ${esc(t)} ${esc(r.by)}</span>` : `<span class="chip dim">${esc(t)}</span>`;
+  }).join('') + logs.filter(x => !meals.includes(x.time)).map(x => `<span class="chip">✓ ${esc(x.time)} ${esc(x.by)}</span>`).join('');
+  const walks = S.walks[key] || [];
+  const outCount = walks.filter(w=>w.type==='out').length;
+  const last = walks[walks.length-1];
+  const out = last && last.type === 'out';
+  $('walkOut').classList.toggle('walking', !!out);
+  const info = $('walkInfo');
+  info.classList.toggle('out', !!out);
+  info.textContent = out ? `散步中・${last.time} 出門（今天第 ${outCount} 次）` : outCount ? `今天散步 ${outCount} 次・最後 ${last.time} 回來` : '今天還沒散步';
+}
+$('members').addEventListener('click', e => {
+  const b = e.target.closest('[data-feed]'); if(!b) return;
+  const key = todayKey();
+  const meals = S.meals.slice().sort();
+  const logs = S.dogLog[key] || (S.dogLog[key] = []);
+  const fed = new Set(logs.map(x=>x.time));
+  const now = new Date();
+  const time = meals.find(m => !fed.has(m)) || hm(now);
+  logs.push({ time, by: b.dataset.feed });
+  save(); renderAll();
+  const ring = $('ring'); ring.classList.remove('pop'); void ring.offsetWidth; ring.classList.add('pop');
+  toast(`已記錄：${b.dataset.feed} 餵了 ${time} 這餐`);
+});
+function logWalk(type){
+  const key = todayKey();
+  const arr = S.walks[key] || (S.walks[key] = []);
+  arr.push({ type, time: hm(new Date()) });
+  save(); renderAll();
+  toast(type === 'out' ? '出門散步，路上小心' : '歡迎回家');
+}
+$('walkOut').onclick = () => logWalk('out');
+$('walkIn').onclick = () => logWalk('in');
+
+// ---------- 行事曆 ----------
+const KIND = { feed:'餵食', walk:'散步', bday:'生日', event:'倒數日', vac:'疫苗', shop:'購物', todo:'代辦' };
+function renderTimeline(){
+  const d = fromYmd(selected), key = selected;
+  const isToday = key === todayKey();
+  const nowHM = hm(new Date());
+  const allDay = [], timed = [], lists = [];
+  const logs = S.dogLog[key] || [];
+  S.meals.slice().sort().forEach(m => {
+    const rec = logs.find(x=>x.time===m);
+    timed.push({ t:m, kind:'feed', title: rec ? `✓ ${rec.by} 已餵` : '狗狗餵食', done: !!rec });
+  });
+  (S.walks[key]||[]).forEach(w => timed.push({ t:w.time, kind:'walk', title: w.type==='out' ? '出門散步' : '散步回來' }));
+  S.birthdays.forEach(b => { if(isBirthdayOn(b,d)) allDay.push({ kind:'bday', title:`${b.name} 生日` }); });
+  S.countdowns.forEach(c => { if(c.date===key) allDay.push({ kind:'event', title:c.name }); });
+  S.vaccines.forEach(c => { if(c.date===key) allDay.push({ kind:'vac', title:c.name }); });
+  (S.shopping[key]||[]).forEach(x => lists.push({ t:'購物', kind:'shop', title:x.text, done:x.done }));
+  (S.todos[key]||[]).forEach(x => lists.push({ t:'代辦', kind:'todo', title:x.text, done:x.done }));
+  timed.sort((a,b) => a.t<b.t ? -1 : a.t>b.t ? 1 : 0);
+
+  const row = i => `<div class="ev k-${i.kind}${i.done ? ' done' : ''}${i.past ? ' past' : ''}">
+      <div class="ev-t num${/^\d/.test(i.t) ? '' : ' word'}">${esc(i.t)}</div><span class="ev-dot"></span>
+      <div class="ev-title">${esc(i.title)}</div><span class="ev-tag">${KIND[i.kind]}</span></div>`;
+  let html = '';
+  if(allDay.length) html += `<div class="allday">${allDay.map(i => `<span class="chip k-${i.kind}" style="background:var(--ks);color:var(--kc)">${KIND[i.kind]}・${esc(i.title)}</span>`).join('')}</div>`;
+  let nowPlaced = !isToday;
+  timed.forEach(i => {
+    if(!nowPlaced && i.t > nowHM){ html += `<div class="now"><b>現在</b><i></i></div>`; nowPlaced = true; }
+    i.past = isToday && i.t <= nowHM && i.kind === 'walk';
+    html += row(i);
+  });
+  if(!nowPlaced && timed.length) html += `<div class="now"><b>現在</b><i></i></div>`;
+  if(lists.length){ html += `<div class="sub-h">清單</div>` + lists.map(row).join(''); }
+  $('timeline').innerHTML = html || '<div class="empty">這一天沒有安排</div>';
+}
+
+// ---------- 代辦 ----------
+function renderTodos(){
+  const list = S.todos[selected] || [];
+  $('todos').innerHTML = list.length ? list.map((x,i) => `
+    <div class="item"><label><input type="checkbox" data-todo="${i}" ${x.done?'checked':''}><span class="${x.done?'done':''}">${esc(x.text)}</span></label><button class="del" data-deltodo="${i}" aria-label="刪除"><svg class="i"><use href="#i-x"/></svg></button></div>`).join('')
+    : '<div class="empty">沒有代辦事項，輕鬆的一天</div>';
+}
+$('todos').addEventListener('change', e => {
+  const i = e.target.dataset.todo; if(i===undefined) return;
+  S.todos[selected][+i].done = e.target.checked; save(); renderAll();
+});
+$('todos').addEventListener('click', e => {
+  const b = e.target.closest('[data-deltodo]'); if(!b) return;
+  S.todos[selected].splice(+b.dataset.deltodo,1); save(); renderAll();
+});
+
+// ---------- 購物 ----------
+function renderShopping(){
+  const list = S.shopping[selected] || [];
+  $('shopping').innerHTML = list.length ? list.map((x,i) => `
+    <div class="item"><label><input type="checkbox" data-shop="${i}" ${x.done?'checked':''}><span class="${x.done?'done':''}">${esc(x.text)}</span></label><button class="del" data-delshop="${i}" aria-label="刪除"><svg class="i"><use href="#i-x"/></svg></button></div>`).join('')
+    : '<div class="empty">這一天還沒有要買的東西</div>';
+}
+$('shopping').addEventListener('change', e => {
+  const i = e.target.dataset.shop; if(i===undefined) return;
+  S.shopping[selected][+i].done = e.target.checked; save(); renderAll();
+});
+$('shopping').addEventListener('click', e => {
+  const b = e.target.closest('[data-delshop]'); if(!b) return;
+  S.shopping[selected].splice(+b.dataset.delshop,1); save(); renderAll();
+});
+function addTo(listKey, text){
+  const t = text.trim(); if(!t) return;
+  (S[listKey][selected] ||= []).push({ text:t, done:false });
+  save(); renderAll();
+}
+$('todoAdd').onclick = () => { addTo('todos', $('todoInput').value); $('todoInput').value=''; };
+$('shopAdd').onclick = () => { addTo('shopping', $('shopInput').value); $('shopInput').value=''; };
+$('todoInput').addEventListener('keydown', e => { if(e.key==='Enter' && !e.isComposing) $('todoAdd').click(); });
+$('shopInput').addEventListener('keydown', e => { if(e.key==='Enter' && !e.isComposing) $('shopAdd').click(); });
+
+const WEEK = {'日':0,'天':0,'一':1,'二':2,'三':3,'四':4,'五':5,'六':6};
+function parseShopping(text){
+  const d = startOfDay();
+  let t = text, found = false;
+  const rel = {'大後天':3,'後天':2,'明天':1,'明日':1,'今天':0,'今日':0};
+  for(const w of Object.keys(rel)){
+    if(t.includes(w)){ d.setDate(d.getDate()+rel[w]); t = t.replace(w,''); found = true; break; }
+  }
+  if(!found){
+    const m = t.match(/(?:星期|禮拜|週|周)([一二三四五六日天])/);
+    if(m){ d.setDate(d.getDate() + (WEEK[m[1]] - d.getDay() + 7) % 7); t = t.replace(m[0],''); }
+  }
+  t = t.replace(/要去買|要買|記得買|幫我買|記得|還要|買/g, '');
+  const items = t.split(/[、，,。；;\s]+|和|及|跟|與|然後|另外|還有/)
+    .map(s => s.replace(/^[的了呢吧啊嗎]+|[的了呢吧啊嗎。！!？?]+$/g,'').trim())
+    .filter(s => s.length > 0 && !/^[要買記得還]+$/.test(s));
+  return { date: ymd(d), items };
+}
+function showParse(text){
+  const p = parseShopping(text);
+  const box = $('parseBox');
+  box.hidden = false;
+  box.innerHTML = `
+    <div class="heard">聽到：「${esc(text)}」</div>
+    <label for="pDate">加到哪一天</label><input type="date" id="pDate" value="${p.date}">
+    <label for="pItems">要買的東西（一行一樣，可以改）</label><textarea id="pItems" rows="4">${esc(p.items.join('\n'))}</textarea>
+    <div class="add"><button id="pOk" style="flex:1">確認加入</button><button class="plain" id="pNo">取消</button></div>`;
+  $('pOk').onclick = () => {
+    const date = $('pDate').value || selected;
+    const items = $('pItems').value.split('\n').map(s=>s.trim()).filter(Boolean);
+    const arr = S.shopping[date] || (S.shopping[date] = []);
+    items.forEach(x => arr.push({ text:x, done:false }));
+    save(); box.hidden = true;
+    selected = date; renderAll();
+    toast(`已加入 ${items.length} 樣東西`);
+  };
+  $('pNo').onclick = () => { box.hidden = true; };
+}
+
+// 語音：Safari 用內建 SpeechRecognition；在 Claude 網頁上則改用平台的聽寫功能
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+let dict = null, dictBuf = '';
+function setMic(on, label){
+  $('mic').classList.toggle('on', on);
+  $('micLabel').textContent = label || (on ? '聆聽中…再按一次結束' : '用說的加入購物');
+}
+(async () => {
+  try {
+    if(!(window.claude && window.claude.use)) return;
+    dict = await window.claude.use('dictation');
+    if(!dict) return;
+    dict.onPartial(({text}) => { $('micHint').textContent = dictBuf + text; });
+    dict.onFinal(({text}) => { dictBuf += text; $('micHint').textContent = dictBuf; });
+    dict.onState(({state, reason}) => {
+      if(state === 'idle'){
+        setMic(false);
+        $('micHint').textContent = '例：「明天要買牛奶、衛生紙和雞蛋」';
+        if(dictBuf.trim()) showParse(dictBuf.trim());
+        else if(reason && !['stopped','viewer_stopped','hidden','dismissed'].includes(reason)) toast('沒有聽清楚，請再說一次或直接打字');
+        dictBuf = '';
+      } else setMic(true);
+    });
+  } catch(e){ dict = null; }
+})();
+let srBusy = null;
+$('mic').onclick = () => {
+  if(SR){
+    if(srBusy){ srBusy.stop(); return; }
+    let r;
+    try { r = new SR(); } catch(e){ r = null; }
+    if(r){
+      r.lang = 'zh-TW'; r.interimResults = false; r.maxAlternatives = 1;
+      srBusy = r; setMic(true);
+      let got = false;
+      r.onresult = e => { got = true; showParse(e.results[0][0].transcript); };
+      r.onerror = ev => {
+        srBusy = null; setMic(false);
+        if(ev.error === 'not-allowed' || ev.error === 'service-not-allowed'){
+          if(dict){ startDict(); return; }
+          toast('沒有麥克風權限，請在 Safari 設定允許，或直接打字');
+        } else if(ev.error !== 'aborted') toast('沒有聽清楚，請再說一次');
+      };
+      r.onend = () => { srBusy = null; if(!$('mic').classList.contains('on') || !dict || !dict.active()) setMic(false); };
+      try { r.start(); return; } catch(e){ srBusy = null; setMic(false); }
+    }
+  }
+  if(dict){ startDict(); return; }
+  toast('這個瀏覽器不支援語音輸入，請改用 Safari，或直接打字');
+};
+function startDict(){
+  if(dict.active()){ dict.stop().catch(()=>{}); return; }
+  dictBuf = '';
+  dict.start({ language:'zh-TW' }).catch(err => {
+    setMic(false);
+    if(err && err.code === 'not_granted') toast('沒有麥克風權限，可以直接打字');
+    else if(err && err.code !== 'dismissed' && err.code !== 'stopped') toast('語音暫時不能用，請直接打字');
+  });
+}
+
+// ---------- 倒數與生日 ----------
+function renderCountdowns(){
+  const rows = [];
+  S.birthdays.forEach(b => { const d = nextBirthday(b); if(d) rows.push({ d, kind:'bday', name:`${b.name} 生日`, meta:`${b.lunar?'農曆':'陽曆'} ${b.mm}/${b.dd}` }); });
+  S.countdowns.forEach(c => rows.push({ d:fromYmd(c.date), kind:'event', name:c.name, meta:'' }));
+  S.vaccines.forEach(c => rows.push({ d:fromYmd(c.date), kind:'vac', name:c.name, meta:'' }));
+  const t = startOfDay();
+  const items = rows.map(r => ({ ...r, left: daysBetween(t, r.d) })).filter(r => r.left >= 0).sort((a,b) => a.left-b.left);
+  $('countdowns').innerHTML = items.length
+    ? items.map(r => `<div class="cd${r.left===0?' today':''}">
+        <div class="cd-n">${r.left===0 ? '<b>今天</b>' : `<b class="num">${r.left}</b><small>天後</small>`}</div>
+        <div class="cd-body"><div class="cd-name">${esc(r.name)}</div>
+          <div class="cd-meta"><span class="tag k-${r.kind}">${KIND[r.kind]}</span>${r.d.getMonth()+1}/${r.d.getDate()}（${WK[r.d.getDay()]}）${r.meta ? `・${esc(r.meta)}` : ''}</div></div></div>`).join('')
+    : '<div class="empty">還沒有設定生日或倒數日，到「設定」加入</div>';
+}
+
+// ---------- 注意事項 ----------
+function renderNotices(){
+  const t = startOfDay();
+  const ns = S.notices.map(n => `<div class="note"><span class="pin"><svg class="i"><use href="#i-pin"/></svg></span><div class="grow">${esc(n)}</div></div>`).join('');
+  const vs = S.vaccines.slice().sort((a,b) => a.date<b.date?-1:1).map(v => {
+    const n = daysBetween(t, fromYmd(v.date));
+    const cls = n < 0 ? 'late' : n <= 14 ? 'soon' : '';
+    const txt = n < 0 ? `過期 ${-n} 天` : n === 0 ? '就是今天' : `還有 ${n} 天`;
+    return `<div class="note vac"><span class="pin" style="color:var(--late)"><svg class="i"><use href="#i-paw"/></svg></span><div class="grow">${esc(v.name)}<small class="num">${esc(v.date)}</small></div><span class="due ${cls}">${txt}</span></div>`;
+  }).join('');
+  $('notices').innerHTML = (ns + vs) || '<div class="empty">還沒有注意事項，到「設定」加入</div>';
+}
+
+// ---------- 今日摘要 ----------
+function renderSummary(){
+  const key = todayKey();
+  const logs = S.dogLog[key] || [];
+  const byName = {};
+  logs.forEach(x => byName[x.by] = (byName[x.by]||0) + 1);
+  const feedTxt = logs.length ? Object.entries(byName).map(([n,c]) => `${n}餵食 ${c} 次`).join('，') : '還沒有餵食紀錄';
+  const todos = S.todos[key] || [];
+  const doneN = todos.filter(x=>x.done).length;
+  const shops = (S.shopping[key] || []).length;
+  const walks = (S.walks[key]||[]).filter(w=>w.type==='out').length;
+  const soon = [];
+  const t = startOfDay();
+  S.birthdays.forEach(b => { const d = nextBirthday(b); if(d && daysBetween(t,d) <= 7) soon.push(`${b.name}生日`); });
+  S.countdowns.forEach(c => { const n = daysBetween(t, fromYmd(c.date)); if(n>=0 && n<=7) soon.push(c.name); });
+  const text = `今天${feedTxt}。散步 ${walks} 次。代辦完成 ${doneN}/${todos.length}，今天要買 ${shops} 樣東西。` + (soon.length ? `近七天有：${soon.join('、')}。` : '');
+  $('summary').textContent = text;
+  window._summaryText = text;
+}
+$('readBtn').onclick = () => {
+  if(!('speechSynthesis' in window)){ toast('這個瀏覽器不支援朗讀'); return; }
+  const u = new SpeechSynthesisUtterance((window._wxText || '') + (window._dogSpeak || '') + (window._summaryText || ''));
+  u.lang = 'zh-TW'; u.rate = 0.9;
+  speechSynthesis.cancel(); speechSynthesis.speak(u);
+};
+
+// ---------- 日期切換 ----------
+function renderDayLabel(){
+  const d = fromYmd(selected);
+  const n = daysBetween(startOfDay(), d);
+  const rel = {0:'今天',1:'明天',2:'後天','-1':'昨天','-2':'前天'}[n];
+  $('selDay').textContent = `${d.getMonth()+1} 月 ${d.getDate()} 日（${WK[d.getDay()]}）`;
+  const sub = $('selSub');
+  sub.textContent = rel || (n > 0 ? `${n} 天後` : `${-n} 天前`);
+  sub.classList.toggle('today', n === 0);
+  $('todoTitle').textContent = `${rel || `${d.getMonth()+1}/${d.getDate()}`}代辦`;
+  $('shopTitle').textContent = `${rel || `${d.getMonth()+1}/${d.getDate()}`}購物清單`;
+  $('toToday').hidden = n === 0;
+}
+function shiftDay(n){ const d = fromYmd(selected); d.setDate(d.getDate()+n); selected = ymd(d); renderAll(); }
+$('prevDay').onclick = () => shiftDay(-1);
+$('nextDay').onclick = () => shiftDay(1);
+$('toToday').onclick = () => { selected = todayKey(); renderAll(); };
+
+// ---------- 設定 ----------
+function parseBirthdays(text){
+  return text.split('\n').map(l=>l.trim()).filter(Boolean).map(l => {
+    const m = l.match(/^(.+?)\s+(\d{1,2})-(\d{1,2})\s*(農曆|陽曆)?$/);
+    return m ? { name:m[1], mm:+m[2], dd:+m[3], lunar: m[4]==='農曆' } : null;
+  }).filter(Boolean);
+}
+function parseDated(text){
+  return text.split('\n').map(l=>l.trim()).filter(Boolean).map(l => {
+    const m = l.match(/^(.+?)\s+(\d{4})-(\d{1,2})-(\d{1,2})$/);
+    return m ? { name:m[1], date:`${m[2]}-${pad(+m[3])}-${pad(+m[4])}` } : null;
+  }).filter(Boolean);
+}
+function openSettings(){
+  $('sMembers').value = S.members.join(',');
+  $('sMeals').value = S.meals.join(',');
+  $('sCity').value = `${S.city.name},${S.city.lat},${S.city.lon}`;
+  $('sBirthdays').value = S.birthdays.map(b => `${b.name} ${pad(b.mm)}-${pad(b.dd)} ${b.lunar?'農曆':'陽曆'}`).join('\n');
+  $('sCountdowns').value = S.countdowns.map(c => `${c.name} ${c.date}`).join('\n');
+  $('sVaccines').value = S.vaccines.map(c => `${c.name} ${c.date}`).join('\n');
+  $('sNotices').value = S.notices.join('\n');
+  applyTheme(getTheme());
+  $('settingsDlg').showModal();
+}
+$('settingsBtn').onclick = openSettings;
+$('settingsBtn2').onclick = openSettings;
+$('sCancel').onclick = () => $('settingsDlg').close();
+$('sSave').onclick = () => {
+  S.members = $('sMembers').value.split(/[,，]/).map(s=>s.trim()).filter(Boolean);
+  S.meals = $('sMeals').value.split(/[,，]/).map(s=>s.trim()).filter(x=>/^\d{1,2}:\d{2}$/.test(x));
+  const c = $('sCity').value.split(/[,，]/).map(s=>s.trim());
+  if(c.length>=3 && c[0] && !isNaN(+c[1]) && !isNaN(+c[2])) S.city = { name:c[0], lat:+c[1], lon:+c[2] };
+  S.birthdays = parseBirthdays($('sBirthdays').value);
+  S.countdowns = parseDated($('sCountdowns').value);
+  S.vaccines = parseDated($('sVaccines').value);
+  S.notices = $('sNotices').value.split('\n').map(s=>s.trim()).filter(Boolean);
+  save(); $('settingsDlg').close(); loadWeather(); renderAll();
+  toast('設定已儲存');
+};
+$('sExport').onclick = () => {
+  $('sBackup').value = JSON.stringify(S);
+  $('sBackup').select();
+  if(navigator.clipboard) navigator.clipboard.writeText($('sBackup').value).then(() => toast('備份已複製，請貼到記事本保存'), () => toast('備份已產生，請長按複製'));
+  else toast('備份已產生，請長按複製');
+};
+$('sImport').onclick = () => {
+  try {
+    const o = JSON.parse($('sBackup').value);
+    S = Object.assign(structuredClone(DEFAULT), o);
+    save(); renderAll(); loadWeather(); toast('已從備份還原');
+  } catch(e){ toast('備份文字格式不正確'); }
+};
+
+// ---------- 總更新 ----------
+function renderAll(){
+  renderDayLabel();
+  renderDog();
+  renderTimeline();
+  renderTodos();
+  renderShopping();
+  renderCountdowns();
+  renderNotices();
+  renderSummary();
+}
+
+tickClock(); setInterval(tickClock, 10000);
+renderAll();
+loadWeather(); setInterval(loadWeather, 30*60*1000);
+document.addEventListener('visibilitychange', () => { if(!document.hidden){ tickClock(); renderTimeline(); } });
+</script>
+</body>
+</html>

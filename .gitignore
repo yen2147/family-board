@@ -1,0 +1,5 @@
+# 只上傳看板網頁本身
+reference/
+.claude/
+*.md
+.DS_Store
