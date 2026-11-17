@@ -1107,7 +1107,7 @@ function showParse(text){
 }
 
 // 語音：Safari 用內建 SpeechRecognition；在 Claude 網頁上則改用平台的聽寫功能
-const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+const getSR = () => window.SpeechRecognition || window.webkitSpeechRecognition;
 let dict = null, dictBuf = '';
 function setMic(on, label){
   $('mic').classList.toggle('on', on);
@@ -1123,7 +1123,7 @@ function setMic(on, label){
     dict.onState(({state, reason}) => {
       if(state === 'idle'){
         setMic(false);
-        $('micHint').textContent = '例：「12月25號要買牛奶、衛生紙和雞蛋」';
+        $('micHint').textContent = HINT;
         if(dictBuf.trim()) showParse(dictBuf.trim());
         else if(reason && !['stopped','viewer_stopped','hidden','dismissed'].includes(reason)) toast('沒有聽清楚，請再說一次或直接打字');
         dictBuf = '';
@@ -1131,31 +1131,76 @@ function setMic(on, label){
     });
   } catch(e){ dict = null; }
 })();
-let srBusy = null;
+// Safari 語音辨識：每次都建立新的辨識器、先清掉上一個；
+// 等麥克風真的開好才顯示「請說話」；邊說邊顯示聽到的字；
+// 停頓 2 秒或再按一次就結束；任何情況都會回到可用狀態，不會卡住。
+const HINT = '例：「12月25號要買牛奶、衛生紙和雞蛋」';
+let rec = null, recText = '', recTimer = null, recWatch = null, recDone = false;
+function clearRecTimers(){ clearTimeout(recTimer); clearTimeout(recWatch); recTimer = recWatch = null; }
+function finishRec(reason){
+  if(recDone) return;
+  recDone = true;
+  clearRecTimers();
+  const r = rec; rec = null;
+  if(r){ r.onresult = r.onerror = r.onend = r.onstart = r.onaudiostart = null; try { r.abort(); } catch(e){} }
+  setMic(false);
+  $('micHint').textContent = HINT;
+  const text = recText.trim(); recText = '';
+  if(text) showParse(text);
+  else if(reason === 'denied') toast('沒有麥克風權限：請到 iPad「設定」→ Safari → 麥克風，改成允許');
+  else if(reason === 'nostart') toast('麥克風沒有打開，請再按一次');
+  else if(reason !== 'cancel') toast('沒有聽到聲音，請按一下按鈕，看到「請說話」再開始說');
+}
+function startRec(){
+  if('speechSynthesis' in window) speechSynthesis.cancel();   // 朗讀會佔用音訊，先停掉
+  let r;
+  try { r = new (getSR())(); } catch(e){ return false; }
+  rec = r; recText = ''; recDone = false;
+  r.lang = 'zh-TW';
+  r.continuous = true;
+  r.interimResults = true;
+  r.maxAlternatives = 1;
+  setMic(true, '準備中…');
+  $('micHint').textContent = '麥克風開啟中，請稍等';
+  const ready = () => {
+    if(rec !== r) return;
+    clearTimeout(recWatch);
+    setMic(true, '請說話・說完再按一次');
+    $('micHint').textContent = '正在聽…';
+    recTimer = setTimeout(() => finishRec('silence'), 8000);   // 8 秒都沒說話就結束
+  };
+  r.onstart = ready;
+  r.onaudiostart = ready;
+  r.onresult = e => {
+    if(rec !== r) return;
+    let txt = '';
+    for(let i = 0; i < e.results.length; i++) txt += e.results[i][0].transcript;
+    recText = txt;
+    $('micHint').textContent = `聽到：${txt}`;
+    clearTimeout(recTimer);
+    recTimer = setTimeout(() => finishRec('silence'), 2000);    // 停頓 2 秒就算說完
+  };
+  r.onerror = ev => {
+    if(rec !== r) return;
+    if(ev.error === 'not-allowed' || ev.error === 'service-not-allowed'){
+      if(dict && !recText){ recDone = true; clearRecTimers(); rec = null; setMic(false); startDict(); return; }
+      finishRec('denied');
+    } else if(ev.error === 'aborted') finishRec('cancel');
+    else finishRec('error');
+  };
+  r.onend = () => { if(rec === r) finishRec('end'); };
+  recWatch = setTimeout(() => { if(rec === r) finishRec('nostart'); }, 5000);   // 5 秒還沒開好就放棄，下次重來
+  try { r.start(); } catch(e){ finishRec('nostart'); }
+  return true;
+}
 $('mic').onclick = () => {
-  if(SR){
-    if(srBusy){ srBusy.stop(); return; }
-    let r;
-    try { r = new SR(); } catch(e){ r = null; }
-    if(r){
-      r.lang = 'zh-TW'; r.interimResults = false; r.maxAlternatives = 1;
-      srBusy = r; setMic(true);
-      let got = false;
-      r.onresult = e => { got = true; showParse(e.results[0][0].transcript); };
-      r.onerror = ev => {
-        srBusy = null; setMic(false);
-        if(ev.error === 'not-allowed' || ev.error === 'service-not-allowed'){
-          if(dict){ startDict(); return; }
-          toast('沒有麥克風權限，請在 Safari 設定允許，或直接打字');
-        } else if(ev.error !== 'aborted') toast('沒有聽清楚，請再說一次');
-      };
-      r.onend = () => { srBusy = null; if(!$('mic').classList.contains('on') || !dict || !dict.active()) setMic(false); };
-      try { r.start(); return; } catch(e){ srBusy = null; setMic(false); }
-    }
-  }
+  if(rec){ finishRec('stop'); return; }            // 聆聽中再按一次＝說完了
+  if(dict && dict.active()){ dict.stop().catch(()=>{}); return; }
+  if(getSR() && startRec()) return;
   if(dict){ startDict(); return; }
   toast('這個瀏覽器不支援語音輸入，請改用 Safari，或直接打字');
 };
+document.addEventListener('visibilitychange', () => { if(document.hidden && rec) finishRec('cancel'); });
 function startDict(){
   if(dict.active()){ dict.stop().catch(()=>{}); return; }
   dictBuf = '';
